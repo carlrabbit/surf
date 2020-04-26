@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package surf;
+
+import "google/protobuf/timestamp.proto";
+import "proto/types.proto";
+
+option csharp_namespace = "Surf.Proto";
+
+message UdpMessage { 
+    oneof type { 
+        Ping ping = 1;
+        PingReq pingReq = 2;
+        Ack ack =3;
+        AckReq ackReq = 4;
+    }
+}
+
+message Ping {
+   repeated Gossip gossip = 1;
+}
+
+message PingReq {
+    MemberAddress member = 1;
+    
+    repeated Gossip gossip = 2;
+}
+
+message Ack {
+ 
+}
+
+message AckReq {
+    MemberAddress ofMember = 1;
+
+}

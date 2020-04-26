@@ -1,0 +1,8 @@
+{
+  "omnisharp.enableEditorConfigSupport": true,
+  "omnisharp.enableRoslynAnalyzers": true,
+  "editor.formatOnSave": true,
+  "omnisharp.useEditorFormattingSettings": false,
+  "csharp.suppressHiddenDiagnostics": false,
+  "csharp.format.enable": true
+}
