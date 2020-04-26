@@ -93,25 +93,26 @@ namespace Surf.Kestrel
 
             var cli = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, port));
 
-            var l = new List<Surf.Core.Member>();
-            var gl = new GossipList();
+            var mC = new MembershipComponent();
+            var gl = new DisseminationComponent(mC);
 
             // start error component
             Task.Run(async () =>
             {
                 while (true)
                 {
-                    Console.WriteLine($"A: {port}: {l.Count}/{gl.Count()}");// + JsonSerializer.Serialize(l));
-                    if (l.Count > 0)
+                    Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
+                    if (await mC.MemberCountAsync() > 0)
                     {
                         //exlude self
-                        var randomEl = l[new Random().Next(l.Count)];
+                        var randomEl = await mC.NextRandomMember();
 
                         var ping = new Proto.UdpMessage()
                         {
                             Ping = new Proto.Ping()
                         };
-                        ping.Ping.Gossip.AddRange(gl.FetchNext(10));
+                        ping.Ping.Gossip.AddRange(await gl.FetchNextAsync(4));
+
                         await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, randomEl.Address));
                     }
 
@@ -122,9 +123,8 @@ namespace Surf.Kestrel
             // listen for events
             Task.Run(async () =>
             {
-                l.Add(self);
 
-                gl.Add(new Proto.Gossip()
+                await gl.AddAsync(new Proto.Gossip()
                 {
                     MemberJoined = new Proto.MemberJoined()
                     {
@@ -142,7 +142,7 @@ namespace Surf.Kestrel
                     {
                         Ping = new Proto.Ping()
                     };
-                    ping.Ping.Gossip.AddRange(gl.FetchNext(3));
+                    ping.Ping.Gossip.AddRange(await gl.FetchNextAsync(4));
                     await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, joinPort.Value));
                 }
 
@@ -174,13 +174,13 @@ namespace Surf.Kestrel
                                     {
                                         case Proto.Gossip.MessageTypeOneofCase.MemberJoined:
                                             var join = m.MemberJoined;
-                                            if (l.Any(m => m.Address == (int)join.Member.Port) == false)
+
+                                            if (await mC.AddMemberAsync(new Member()
                                             {
-                                                l.Add(new Member()
-                                                {
-                                                    Address = (int)join.Member.Port
-                                                });
-                                                gl.Add(m);
+                                                Address = (int)join.Member.Port
+                                            }))
+                                            {
+                                                await gl.AddAsync(m).ConfigureAwait(false);
                                             }
 
                                             break;

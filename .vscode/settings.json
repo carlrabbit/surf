@@ -4,5 +4,59 @@
   "editor.formatOnSave": true,
   "omnisharp.useEditorFormattingSettings": false,
   "csharp.suppressHiddenDiagnostics": false,
-  "csharp.format.enable": true
+  "csharp.format.enable": true,
+  "docomment.advanced": {
+    "cs": {
+      "namespace": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "class": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "interface": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "struct": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "enum": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "delegate": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "field": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "property": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "method": {
+        "attributes": [
+          "summary"
+        ]
+      },
+      "event": {
+        "attributes": [
+          "summary"
+        ]
+      }
+    }
+  },
 }

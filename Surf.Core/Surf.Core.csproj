@@ -8,6 +8,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="Nito.AsyncEx" Version="5.0.0" />
     </ItemGroup>
     <ItemGroup>
         <Protobuf Include="Proto/*.proto" OutputDir="Proto.Impl/%(RelativePath)" CompileOutputs="false" GrpcServices="None" />
