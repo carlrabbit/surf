@@ -19,9 +19,10 @@ namespace Surf.Core
     public class DisseminationComponent
     {
         private readonly StateAndConfigurationComponent _state;
-        private readonly AsyncReaderWriterLock lockSlim = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
 
         private List<GossipWrapper> _basicMemberGossip = new List<GossipWrapper>();
+        private HashSet<int> _knownGossip = new HashSet<int>();
         public DisseminationComponent(StateAndConfigurationComponent state)
         {
             _state = state;
@@ -30,12 +31,12 @@ namespace Surf.Core
         private class GossipWrapper
         {
             public Proto.Gossip Msg { get; set; }
-            public double LocalAge { get; set; } = 0;
+            public double LocalAge { get; set; } = 0.0;
         }
 
         public async ValueTask<int> StackCount()
         {
-            using (await lockSlim.ReaderLockAsync())
+            using (await _rwLock.ReaderLockAsync())
             {
                 return _basicMemberGossip.Count();
             }
@@ -43,7 +44,14 @@ namespace Surf.Core
 
         public async Task AddAsync(Surf.Proto.Gossip msg)
         {
-            using (await lockSlim.WriterLockAsync())
+            using (await _rwLock.ReaderLockAsync())
+            {
+                if (_knownGossip.Contains(msg.GetHashCode()))
+                {
+                    return;
+                }
+            }
+            using (await _rwLock.WriterLockAsync())
             {
                 _basicMemberGossip.Insert(0, new GossipWrapper() { Msg = msg });
             }
@@ -56,9 +64,9 @@ namespace Surf.Core
         public async Task<List<Surf.Proto.Gossip>> FetchNextAsync(int next)
         {
             double maxAge = await _state.GetChatterLifeTimeAsync();
-            using (await lockSlim.WriterLockAsync())
+            using (await _rwLock.WriterLockAsync())
             {
-                List<Surf.Proto.Gossip> elements = new List<Surf.Proto.Gossip>(next);
+                var elements = new List<Surf.Proto.Gossip>(next);
 
                 _basicMemberGossip.Take(next).ToList().ForEach(m =>
                 {
@@ -67,6 +75,7 @@ namespace Surf.Core
                 });
 
                 _basicMemberGossip = _basicMemberGossip.Where(e => e.LocalAge <= maxAge).OrderBy(e => e.LocalAge).ToList();
+                _knownGossip = _basicMemberGossip.Select(g => g.Msg.GetHashCode()).ToHashSet();
                 return elements;
             }
         }

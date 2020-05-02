@@ -91,41 +91,15 @@ namespace Surf.Kestrel
                 Address = port
             };
 
-            var cli = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, port));
-
             var scC = new StateAndConfigurationComponent();
+            var tc = new TransportComponent(scC, port);
             var mC = new MembershipComponent(scC);
             var gl = new DisseminationComponent(scC);
-
-            // start error component
-            Task.Run(async () =>
-            {
-                while (true)
-                {
-                    Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
-                    await scC.IncreaseErrorCycleNumber();
-                    if (await mC.MemberCountAsync() > 0)
-                    {
-                        //exlude self
-                        var randomEl = await mC.NextRandomMember();
-
-                        var ping = new Proto.UdpMessage()
-                        {
-                            Ping = new Proto.Ping()
-                        };
-                        ping.Ping.Gossip.AddRange(await gl.FetchNextAsync(4));
-
-                        await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, randomEl.Address));
-                    }
-
-                    await Task.Delay(100);
-                }
-            });
+            var fdc = new FailureDetectorComponent(scC, tc, mC, gl);
 
             // listen for events
             Task.Run(async () =>
             {
-
                 await gl.AddAsync(new Proto.Gossip()
                 {
                     MemberJoined = new Proto.MemberJoined()
@@ -140,68 +114,24 @@ namespace Surf.Kestrel
 
                 if (joinPort.HasValue)
                 {
-                    var ping = new Proto.UdpMessage()
-                    {
-                        Ping = new Proto.Ping()
-                    };
-                    ping.Ping.Gossip.AddRange(await gl.FetchNextAsync(4));
-                    await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, joinPort.Value));
+                    await mC.AddMemberAsync(new Member() { Address = joinPort.Value });
+                    //await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, joinPort.Value));
                 }
 
+                await tc.ListenAsync();
+            });
+            // start error component
+            Task.Run(async () =>
+            {
                 while (true)
                 {
-                    var r = await cli.ReceiveAsync();
+                    Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
 
-                    try
-                    {
-                        var udpEnvelope = Surf.Proto.UdpMessage.Parser.ParseFrom(r.Buffer);
-                        var requester = new Surf.Core.Member() { Address = r.RemoteEndPoint.Port };
+                    await fdc.DoProtocolPeriod();
 
-                        switch (udpEnvelope.TypeCase)
-                        {
-                            case Proto.UdpMessage.TypeOneofCase.Ping:
-                                var p = udpEnvelope.Ping;
-
-                                var ack = new Proto.Ack();
-                                var ackEnv = new Proto.UdpMessage()
-                                {
-                                    Ack = ack
-                                };
-                                await cli.SendAsync(ack.ToByteArray(), ack.CalculateSize(), r.RemoteEndPoint);
-                                //sendAck
-
-                                foreach (var m in p.Gossip)
-                                {
-                                    switch (m.MessageTypeCase)
-                                    {
-                                        case Proto.Gossip.MessageTypeOneofCase.MemberJoined:
-                                            var join = m.MemberJoined;
-
-                                            if (await mC.AddMemberAsync(new Member()
-                                            {
-                                                Address = (int)join.Member.Port
-                                            }))
-                                            {
-                                                await gl.AddAsync(m).ConfigureAwait(false);
-                                            }
-
-                                            break;
-                                        default: break;
-                                    }
-                                }
-
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    catch (Google.Protobuf.InvalidProtocolBufferException)
-                    {
-
-                    }
+                    await Task.Delay(1000);
                 }
             });
-
         }
     }
 

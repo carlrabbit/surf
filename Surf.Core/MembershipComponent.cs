@@ -18,7 +18,7 @@ namespace Surf.Core
         }
 
         private readonly AsyncReaderWriterLock rwLock = new AsyncReaderWriterLock();
-        private readonly List<Member> _members = new List<Member>();
+        private List<Member> _members = new List<Member>();
         private int _randomListIndex = 0;
         public async Task<bool> AddMemberAsync(Member m)
         {
@@ -37,6 +37,14 @@ namespace Surf.Core
             }
         }
 
+        public async Task RemoveMemberAsync(Member member)
+        {
+            using (await rwLock.WriterLockAsync())
+            {
+                _members = _members.Where(m => m.Address != member.Address).ToList();
+            }
+        }
+
         public async ValueTask<int> MemberCountAsync()
         {
             using (await rwLock.ReaderLockAsync().ConfigureAwait(false))
@@ -45,7 +53,7 @@ namespace Surf.Core
             }
         }
 
-        public async Task<Member> NextRandomMember()
+        public async Task<Member> NextRandomMemberAsync()
         {
             using (await rwLock.WriterLockAsync().ConfigureAwait(false))
             {

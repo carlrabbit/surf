@@ -19,23 +19,25 @@ namespace Surf.Core
     /// </summary>
     public class StateAndConfigurationComponent
     {
-        private readonly AsyncReaderWriterLock lockSlim = new AsyncReaderWriterLock();
+        private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
 
         public StateAndConfigurationComponent()
         {
             //TODO: add cfg class
             _lambda = 3.0;
+            _pingTimeout = 300;
 
             // init internal defaults
             _clt = 0;
             _errorCycle = 0;
+            _meanRoundTripTime = _pingTimeout;
         }
 
         private double _lambda;
         private double _clt;
         public async Task<double> GetChatterLifeTimeAsync()
         {
-            using (await lockSlim.ReaderLockAsync())
+            using (await _rwLock.ReaderLockAsync())
             {
                 return _clt;
             }
@@ -43,23 +45,55 @@ namespace Surf.Core
 
         public async Task UpdateMemberCountAsync(int activeMembers)
         {
-            using (await lockSlim.WriterLockAsync())
+            using (await _rwLock.WriterLockAsync())
             {
                 _clt = Math.Ceiling(_lambda * Math.Log10(activeMembers));
             }
         }
 
-        public long _errorCycle;
-        public Task IncreaseErrorCycleNumber()
+        private List<long> _measures = new List<long>();
+        private double _meanRoundTripTime;
+
+        public async Task UpdateAverageRoundTripTimeAsync(long measuredMilliseconds)
         {
-            Interlocked.Increment(ref _errorCycle);
+            using (await _rwLock.WriterLockAsync())
+            {
+                if (_measures.Count > 100)
+                {
+                    _measures = _measures.Skip(1).Append(measuredMilliseconds).ToList();
+                }
+                else
+                {
+                    _measures.Add(measuredMilliseconds);
+                }
+                _meanRoundTripTime = _measures.Average();
+            }
+        }
+
+        public async Task<double> GetAverageRoundTripTimeAsync()
+        {
+            using (await _rwLock.ReaderLockAsync())
+            {
+                return _meanRoundTripTime;
+            }
+        }
+
+        private long _errorCycle;
+        public long IncreaseProtocolPeriod()
+        {
+            return Interlocked.Increment(ref _errorCycle);
             //TODO: handle overflows
-            return Task.CompletedTask;
         }
 
         public Task<long> GetErrorCycleNumberAsync()
         {
             return Task.FromResult(Interlocked.Read(ref _errorCycle));
+        }
+
+        private int _pingTimeout;
+        public Task<int> GetCurrentPingTimeoutAsync()
+        {
+            return Task.FromResult(_pingTimeout);
         }
     }
 }
