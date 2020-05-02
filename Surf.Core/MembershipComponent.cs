@@ -10,6 +10,13 @@ namespace Surf.Core
     /// </summary>
     public class MembershipComponent
     {
+        private readonly StateAndConfigurationComponent _state;
+
+        public MembershipComponent(StateAndConfigurationComponent state)
+        {
+            _state = state;
+        }
+
         private readonly AsyncReaderWriterLock rwLock = new AsyncReaderWriterLock();
         private readonly List<Member> _members = new List<Member>();
         private int _randomListIndex = 0;
@@ -20,6 +27,7 @@ namespace Surf.Core
                 if (!_members.Any(e => e.Address == m.Address))
                 {
                     _members.Add(m);
+                    await _state.UpdateMemberCountAsync(_members.Count);
                     return true;
                 }
                 else

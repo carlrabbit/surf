@@ -93,8 +93,9 @@ namespace Surf.Kestrel
 
             var cli = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, port));
 
-            var mC = new MembershipComponent();
-            var gl = new DisseminationComponent(mC);
+            var scC = new StateAndConfigurationComponent();
+            var mC = new MembershipComponent(scC);
+            var gl = new DisseminationComponent(scC);
 
             // start error component
             Task.Run(async () =>
@@ -102,6 +103,7 @@ namespace Surf.Kestrel
                 while (true)
                 {
                     Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
+                    await scC.IncreaseErrorCycleNumber();
                     if (await mC.MemberCountAsync() > 0)
                     {
                         //exlude self
@@ -116,7 +118,7 @@ namespace Surf.Kestrel
                         await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, randomEl.Address));
                     }
 
-                    await Task.Delay(500);
+                    await Task.Delay(100);
                 }
             });
 

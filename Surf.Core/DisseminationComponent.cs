@@ -18,26 +18,19 @@ namespace Surf.Core
     /// </summary>
     public class DisseminationComponent
     {
-        private readonly MembershipComponent _memberList;
+        private readonly StateAndConfigurationComponent _state;
         private readonly AsyncReaderWriterLock lockSlim = new AsyncReaderWriterLock();
 
         private List<GossipWrapper> _basicMemberGossip = new List<GossipWrapper>();
-        public DisseminationComponent(MembershipComponent ml)
+        public DisseminationComponent(StateAndConfigurationComponent state)
         {
-            _memberList = ml;
+            _state = state;
         }
 
         private class GossipWrapper
         {
             public Proto.Gossip Msg { get; set; }
             public double LocalAge { get; set; } = 0;
-        }
-
-        public double Lambda => 3.0;
-
-        public async ValueTask<double> CurrentMaxLocalAge()
-        {
-            return Math.Ceiling(Lambda * Math.Log10(await _memberList.MemberCountAsync()));
         }
 
         public async ValueTask<int> StackCount()
@@ -62,7 +55,7 @@ namespace Surf.Core
         /// </summary>
         public async Task<List<Surf.Proto.Gossip>> FetchNextAsync(int next)
         {
-            double maxAge = await CurrentMaxLocalAge();
+            double maxAge = await _state.GetChatterLifeTimeAsync();
             using (await lockSlim.WriterLockAsync())
             {
                 List<Surf.Proto.Gossip> elements = new List<Surf.Proto.Gossip>(next);
