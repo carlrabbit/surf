@@ -25,7 +25,7 @@ namespace Surf.Core
         {
             //TODO: add cfg class
             _lambda = 3.0;
-            _pingTimeout = 300;
+            _pingTimeout = 500;
 
             // init internal defaults
             _clt = 0;

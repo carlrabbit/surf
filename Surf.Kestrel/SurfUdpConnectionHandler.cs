@@ -44,44 +44,6 @@ namespace Surf.Kestrel
             {
                 StartMember(port, joinPort: 6667);
             }
-
-            // Task.Run(async () =>
-            // {
-            //     var cli = new UdpClient();
-            //     while (true)
-            //     {
-            //         var ping = new Surf.Proto.UdpMessage()
-            //         {
-            //             Ping = new Proto.Ping()
-            //             {
-            //                 Gossip = {
-            //                     new Surf.Proto.Gossip {
-            //                         MemberJoined= new Proto.MemberJoined() {
-            //                             Member= new Proto.MemberAddress() {
-            //                                 Port=7777,
-            //                                 V6=ByteString.CopyFrom(IPAddress.IPv6Loopback.GetAddressBytes())
-            //                             }
-            //                         }
-            //                     }
-            //                 }
-            //             }
-            //             // Ts = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow),
-            //             // Nodes = { new Surf.Proto.NodeAddress() { Port = 33, V6 = ByteString.CopyFrom(IPAddress.IPv6Loopback.GetAddressBytes()) } }
-            //         };
-
-            //         Console.WriteLine($" Size is {ping.CalculateSize()}");
-            //         byte[] msg = null;
-            //         using (var x = new MemoryStream())
-            //         {
-            //             ping.WriteTo(x);
-            //             msg = x.ToArray();
-            //         }
-
-            //         await cli.SendAsync(msg, msg.Length, new System.Net.IPEndPoint(IPAddress.Loopback, 2223));
-            //         await cli.SendAsync(new byte[] { 21, 32, 3 }, 3, new System.Net.IPEndPoint(IPAddress.Loopback, 2223));
-            //         await Task.Delay(TimeSpan.FromSeconds(1));
-            //     }
-            // });
         }
 
         public void StartMember(int port, int? joinPort)
@@ -100,9 +62,9 @@ namespace Surf.Kestrel
             // listen for events
             Task.Run(async () =>
             {
-                await gl.AddAsync(new Proto.Gossip()
+                await gl.AddAsync(new Proto.GossipEnvelope()
                 {
-                    MemberJoined = new Proto.MemberJoined()
+                    MemberJoined = new Proto.MemberJoinedMe()
                     {
                         Member = new Proto.MemberAddress()
                         {

@@ -30,7 +30,7 @@ namespace Surf.Core
 
         private class GossipWrapper
         {
-            public Proto.Gossip Msg { get; set; }
+            public Proto.GossipEnvelope Msg { get; set; }
             public double LocalAge { get; set; } = 0.0;
         }
 
@@ -42,7 +42,7 @@ namespace Surf.Core
             }
         }
 
-        public async Task AddAsync(Surf.Proto.Gossip msg)
+        public async Task AddAsync(Surf.Proto.GossipEnvelope msg)
         {
             using (await _rwLock.ReaderLockAsync())
             {
@@ -61,12 +61,12 @@ namespace Surf.Core
         /// Fetches the next gossip messages that should be sent, increases there age by 1 and removes the ones that 
         /// are too old.
         /// </summary>
-        public async Task<List<Surf.Proto.Gossip>> FetchNextAsync(int next)
+        public async Task<List<Surf.Proto.GossipEnvelope>> FetchNextAsync(int next)
         {
             double maxAge = await _state.GetChatterLifeTimeAsync();
             using (await _rwLock.WriterLockAsync())
             {
-                var elements = new List<Surf.Proto.Gossip>(next);
+                var elements = new List<Surf.Proto.GossipEnvelope>(next);
 
                 _basicMemberGossip.Take(next).ToList().ForEach(m =>
                 {

@@ -1,0 +1,17 @@
+// This file includes shared types for the surf protobuf data types
+
+syntax = "proto3";
+
+package surf;
+
+// import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Surf.Proto";
+
+message MemberAddress {
+    oneof ipAddr {
+        fixed32 v4 = 1;
+        bytes v6 = 2;
+    }
+    fixed32 port = 3; 
+}

@@ -26,7 +26,7 @@ namespace Surf.Core
             {
                 if (!_members.Any(e => e.Address == m.Address))
                 {
-                    _members.Add(m);
+                    _members.Insert(0, m);
                     await _state.UpdateMemberCountAsync(_members.Count);
                     return true;
                 }
@@ -37,15 +37,23 @@ namespace Surf.Core
             }
         }
 
-        public async Task RemoveMemberAsync(Member member)
+        public async Task<bool> RemoveMemberAsync(Member member)
         {
+            using (await rwLock.ReaderLockAsync())
+            {
+                if (_members.Any(m => m.Address == member.Address) == false)
+                {
+                    return false;
+                }
+            }
             using (await rwLock.WriterLockAsync())
             {
                 _members = _members.Where(m => m.Address != member.Address).ToList();
             }
+            return true;
         }
 
-        public async ValueTask<int> MemberCountAsync()
+        public async Task<int> MemberCountAsync()
         {
             using (await rwLock.ReaderLockAsync().ConfigureAwait(false))
             {

@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package surf;
 
-import "google/protobuf/timestamp.proto";
-import "proto/types.proto";
+import "proto/baseTypes.proto";
+import "proto/gossip.proto";
 
 option csharp_namespace = "Surf.Proto";
 
-message UdpMessage { 
+message MessageEnvelope { 
     oneof type { 
         Ping ping = 1;
         PingReq pingReq = 2;
@@ -17,13 +17,13 @@ message UdpMessage {
 }
 
 message Ping {
-   repeated Gossip gossip = 1;
+   repeated GossipEnvelope gossip = 1;
 }
 
 message PingReq {
     MemberAddress member = 1;
     
-    repeated Gossip gossip = 2;
+    repeated GossipEnvelope gossip = 2;
 }
 
 message Ack {

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package surf;
+
+import "proto/baseTypes.proto";
+
+option csharp_namespace = "Surf.Proto";
+
+message GossipEnvelope {
+    oneof messageType {
+        MemberLeftMe memberLeft = 1;
+        MemberJoinedMe memberJoined = 2;
+        MemberFailedForMe memberFailed = 3;
+    }
+}
+
+message MemberLeftMe {
+    MemberAddress member = 1 ;
+}
+
+message MemberJoinedMe {
+    MemberAddress member = 1;
+}
+
+message MemberFailedForMe {
+    MemberAddress member = 1;
+}

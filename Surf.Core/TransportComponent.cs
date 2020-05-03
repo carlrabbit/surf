@@ -30,7 +30,7 @@ namespace Surf.Core
             Interlocked.Exchange(ref _fdc, fdc);
         }
 
-        public async Task SendMessageAsync(Proto.UdpMessage msg, Member toMember)
+        public async Task SendMessageAsync(Proto.MessageEnvelope msg, Member toMember)
         {
             var data = msg.ToByteArray();
             await _client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.IPv6Loopback, toMember.Address));
@@ -44,15 +44,15 @@ namespace Surf.Core
 
                 try
                 {
-                    var udpEnvelope = Surf.Proto.UdpMessage.Parser.ParseFrom(r.Buffer);
+                    var udpEnvelope = Surf.Proto.MessageEnvelope.Parser.ParseFrom(r.Buffer);
                     var requester = new Surf.Core.Member() { Address = r.RemoteEndPoint.Port };
 
                     switch (udpEnvelope.TypeCase)
                     {
-                        case Proto.UdpMessage.TypeOneofCase.Ping:
+                        case Proto.MessageEnvelope.TypeOneofCase.Ping:
                             await _fdc.OnPing(udpEnvelope.Ping, requester);
                             break;
-                        case Proto.UdpMessage.TypeOneofCase.Ack:
+                        case Proto.MessageEnvelope.TypeOneofCase.Ack:
                             await _fdc.OnAck(udpEnvelope.Ack, requester);
                             break;
                         default:
