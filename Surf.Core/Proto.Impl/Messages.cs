@@ -28,19 +28,20 @@ namespace Surf.Proto {
             "LnByb3RvGhJwcm90by9nb3NzaXAucHJvdG8ikQEKD01lc3NhZ2VFbnZlbG9w",
             "ZRIaCgRwaW5nGAEgASgLMgouc3VyZi5QaW5nSAASIAoHcGluZ1JlcRgCIAEo",
             "CzINLnN1cmYuUGluZ1JlcUgAEhgKA2FjaxgDIAEoCzIJLnN1cmYuQWNrSAAS",
-            "HgoGYWNrUmVxGAQgASgLMgwuc3VyZi5BY2tSZXFIAEIGCgR0eXBlIiwKBFBp",
-            "bmcSJAoGZ29zc2lwGAEgAygLMhQuc3VyZi5Hb3NzaXBFbnZlbG9wZSJUCgdQ",
-            "aW5nUmVxEiMKBm1lbWJlchgBIAEoCzITLnN1cmYuTWVtYmVyQWRkcmVzcxIk",
-            "CgZnb3NzaXAYAiADKAsyFC5zdXJmLkdvc3NpcEVudmVsb3BlIgUKA0FjayIv",
-            "CgZBY2tSZXESJQoIb2ZNZW1iZXIYASABKAsyEy5zdXJmLk1lbWJlckFkZHJl",
-            "c3NCDaoCClN1cmYuUHJvdG9iBnByb3RvMw=="));
+            "HgoGYWNrUmVxGAQgASgLMgwuc3VyZi5BY2tSZXFIAEIGCgR0eXBlIj8KBFBp",
+            "bmcSJAoGZ29zc2lwGAEgAygLMhQuc3VyZi5Hb3NzaXBFbnZlbG9wZRIRCgls",
+            "b2NhbFRpbWUYAiABKA8iVAoHUGluZ1JlcRIjCgZtZW1iZXIYASABKAsyEy5z",
+            "dXJmLk1lbWJlckFkZHJlc3MSJAoGZ29zc2lwGAIgAygLMhQuc3VyZi5Hb3Nz",
+            "aXBFbnZlbG9wZSIYCgNBY2sSEQoJbG9jYWxUaW1lGAEgASgPIi8KBkFja1Jl",
+            "cRIlCghvZk1lbWJlchgBIAEoCzITLnN1cmYuTWVtYmVyQWRkcmVzc0INqgIK",
+            "U3VyZi5Qcm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Surf.Proto.BaseTypesReflection.Descriptor, global::Surf.Proto.GossipReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.MessageEnvelope), global::Surf.Proto.MessageEnvelope.Parser, new[]{ "Ping", "PingReq", "Ack", "AckReq" }, new[]{ "Type" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.Ping), global::Surf.Proto.Ping.Parser, new[]{ "Gossip" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.Ping), global::Surf.Proto.Ping.Parser, new[]{ "Gossip", "LocalTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.PingReq), global::Surf.Proto.PingReq.Parser, new[]{ "Member", "Gossip" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.Ack), global::Surf.Proto.Ack.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.Ack), global::Surf.Proto.Ack.Parser, new[]{ "LocalTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.AckReq), global::Surf.Proto.AckReq.Parser, new[]{ "OfMember" }, null, null, null, null)
           }));
     }
@@ -356,6 +357,7 @@ namespace Surf.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Ping(Ping other) : this() {
       gossip_ = other.gossip_.Clone();
+      localTime_ = other.localTime_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -374,6 +376,17 @@ namespace Surf.Proto {
       get { return gossip_; }
     }
 
+    /// <summary>Field number for the "localTime" field.</summary>
+    public const int LocalTimeFieldNumber = 2;
+    private int localTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int LocalTime {
+      get { return localTime_; }
+      set {
+        localTime_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Ping);
@@ -388,6 +401,7 @@ namespace Surf.Proto {
         return true;
       }
       if(!gossip_.Equals(other.gossip_)) return false;
+      if (LocalTime != other.LocalTime) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -395,6 +409,7 @@ namespace Surf.Proto {
     public override int GetHashCode() {
       int hash = 1;
       hash ^= gossip_.GetHashCode();
+      if (LocalTime != 0) hash ^= LocalTime.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -409,6 +424,10 @@ namespace Surf.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
       gossip_.WriteTo(output, _repeated_gossip_codec);
+      if (LocalTime != 0) {
+        output.WriteRawTag(21);
+        output.WriteSFixed32(LocalTime);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -418,6 +437,9 @@ namespace Surf.Proto {
     public int CalculateSize() {
       int size = 0;
       size += gossip_.CalculateSize(_repeated_gossip_codec);
+      if (LocalTime != 0) {
+        size += 1 + 4;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -430,6 +452,9 @@ namespace Surf.Proto {
         return;
       }
       gossip_.Add(other.gossip_);
+      if (other.LocalTime != 0) {
+        LocalTime = other.LocalTime;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -443,6 +468,10 @@ namespace Surf.Proto {
             break;
           case 10: {
             gossip_.AddEntriesFrom(input, _repeated_gossip_codec);
+            break;
+          }
+          case 21: {
+            LocalTime = input.ReadSFixed32();
             break;
           }
         }
@@ -631,12 +660,24 @@ namespace Surf.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Ack(Ack other) : this() {
+      localTime_ = other.localTime_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Ack Clone() {
       return new Ack(this);
+    }
+
+    /// <summary>Field number for the "localTime" field.</summary>
+    public const int LocalTimeFieldNumber = 1;
+    private int localTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int LocalTime {
+      get { return localTime_; }
+      set {
+        localTime_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -652,12 +693,14 @@ namespace Surf.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (LocalTime != other.LocalTime) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
+      if (LocalTime != 0) hash ^= LocalTime.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -671,6 +714,10 @@ namespace Surf.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+      if (LocalTime != 0) {
+        output.WriteRawTag(13);
+        output.WriteSFixed32(LocalTime);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -679,6 +726,9 @@ namespace Surf.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
+      if (LocalTime != 0) {
+        size += 1 + 4;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -689,6 +739,9 @@ namespace Surf.Proto {
     public void MergeFrom(Ack other) {
       if (other == null) {
         return;
+      }
+      if (other.LocalTime != 0) {
+        LocalTime = other.LocalTime;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -701,6 +754,10 @@ namespace Surf.Proto {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
+          case 13: {
+            LocalTime = input.ReadSFixed32();
+            break;
+          }
         }
       }
     }

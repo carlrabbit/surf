@@ -18,6 +18,7 @@ message MessageEnvelope {
 
 message Ping {
    repeated GossipEnvelope gossip = 1;
+   sfixed32 localTime = 2;
 }
 
 message PingReq {
@@ -27,7 +28,7 @@ message PingReq {
 }
 
 message Ack {
- 
+    sfixed32 localTime = 1;
 }
 
 message AckReq {

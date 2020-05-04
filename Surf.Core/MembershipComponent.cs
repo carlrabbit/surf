@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,14 +21,18 @@ namespace Surf.Core
         private readonly AsyncReaderWriterLock rwLock = new AsyncReaderWriterLock();
         private List<Member> _members = new List<Member>();
         private int _randomListIndex = 0;
+        private Random _rng = new Random();
         public async Task<bool> AddMemberAsync(Member m)
         {
             using (await rwLock.WriterLockAsync().ConfigureAwait(false))
             {
                 if (!_members.Any(e => e.Address == m.Address))
                 {
-                    _members.Insert(0, m);
-                    await _state.UpdateMemberCountAsync(_members.Count);
+                    //insert new member at a random position
+                    _members.Insert(_rng.Next(0, _members.Count), m);
+
+                    await _state.UpdateMemberCountAsync(_members.Count).ConfigureAwait(false);
+
                     return true;
                 }
                 else
@@ -39,18 +44,41 @@ namespace Surf.Core
 
         public async Task<bool> RemoveMemberAsync(Member member)
         {
-            using (await rwLock.ReaderLockAsync())
+            int memberCountBeforeFiltering;
+
+            using (await rwLock.WriterLockAsync().ConfigureAwait(false))
             {
-                if (_members.Any(m => m.Address == member.Address) == false)
+                memberCountBeforeFiltering = _members.Count;
+                _members = _members.Where(m => m.Address != member.Address).ToList();
+
+                if (memberCountBeforeFiltering != _members.Count)
+                {
+                    _randomListIndex--;
+                    return true;
+                }
+                else
                 {
                     return false;
                 }
             }
-            using (await rwLock.WriterLockAsync())
+        }
+
+        /// <summary>
+        /// Performs a Fisher Yates Shuffle on the member list. Expects the member list to be locked upfront. 
+        /// </summary>
+        /// <remarks>
+        /// Based on https://www.dotnetperls.com/fisher-yates-shuffle
+        /// </remarks>
+        private void Shuffle(List<Member> members)
+        {
+            var n = members.Count;
+            for (var i = 0; i < (n - 1); i++)
             {
-                _members = _members.Where(m => m.Address != member.Address).ToList();
+                var r = i + _rng.Next(n - i);
+                var t = members[r];
+                members[r] = members[i];
+                members[i] = t;
             }
-            return true;
         }
 
         public async Task<int> MemberCountAsync()
@@ -67,7 +95,7 @@ namespace Surf.Core
             {
                 if (_randomListIndex >= _members.Count)
                 {
-                    //sort
+                    Shuffle(_members);
                     _randomListIndex = 0;
                 }
 

@@ -78,16 +78,16 @@ namespace Surf.Core
             }
         }
 
-        private long _errorCycle;
-        public long IncreaseProtocolPeriod()
+        private int _errorCycle;
+        public int IncreaseProtocolPeriod()
         {
             return Interlocked.Increment(ref _errorCycle);
             //TODO: handle overflows
         }
 
-        public Task<long> GetErrorCycleNumberAsync()
+        public Task<int> GetErrorCycleNumberAsync()
         {
-            return Task.FromResult(Interlocked.Read(ref _errorCycle));
+            return Task.FromResult(_errorCycle);
         }
 
         private int _pingTimeout;

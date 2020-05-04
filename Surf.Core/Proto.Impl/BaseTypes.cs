@@ -25,7 +25,7 @@ namespace Surf.Proto {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChVQcm90by9iYXNlVHlwZXMucHJvdG8SBHN1cmYiQwoNTWVtYmVyQWRkcmVz",
-            "cxIMCgJ2NBgBIAEoB0gAEgwKAnY2GAIgASgMSAASDAoEcG9ydBgDIAEoB0II",
+            "cxIMCgJ2NBgBIAEoB0gAEgwKAnY2GAIgASgMSAASDAoEcG9ydBgDIAEoD0II",
             "CgZpcEFkZHJCDaoCClN1cmYuUHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
@@ -104,9 +104,9 @@ namespace Surf.Proto {
 
     /// <summary>Field number for the "port" field.</summary>
     public const int PortFieldNumber = 3;
-    private uint port_;
+    private int port_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public uint Port {
+    public int Port {
       get { return port_; }
       set {
         port_ = value;
@@ -182,7 +182,7 @@ namespace Surf.Proto {
       }
       if (Port != 0) {
         output.WriteRawTag(29);
-        output.WriteFixed32(Port);
+        output.WriteSFixed32(Port);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -244,7 +244,7 @@ namespace Surf.Proto {
             break;
           }
           case 29: {
-            Port = input.ReadFixed32();
+            Port = input.ReadSFixed32();
             break;
           }
         }

@@ -36,7 +36,7 @@ namespace Surf.Core
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
 
 
-        private long _currentPeriod = -1;
+        private int _currentPeriod = -1;
         private readonly Stopwatch _currentSW = new Stopwatch();
         private Task _currentTimeout = null;
         private CancellationTokenSource _currentToken;
@@ -67,6 +67,9 @@ namespace Surf.Core
             var pingMsg = new Proto.MessageEnvelope()
             {
                 Ping = new Proto.Ping()
+                {
+                    LocalTime = _currentPeriod
+                }
             };
 
             pingMsg.Ping.Gossip.AddRange(await _gossip.FetchNextAsync(6));
@@ -80,23 +83,22 @@ namespace Surf.Core
             _currentTimeout = Task.Delay(await _state.GetCurrentPingTimeoutAsync().ConfigureAwait(false), _currentToken.Token)
                 .ContinueWith(async (t, _) =>
                 {
+                    var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
 
-                    // bool memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
-
-                    // if (memberRemoved)
-                    // {
-                    //     await _gossip.AddAsync(new Proto.GossipEnvelope()
-                    //     {
-                    //         MemberFailed = new Proto.MemberFailedForMe()
-                    //         {
-                    //             Member = new Proto.MemberAddress()
-                    //             {
-                    //                 V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                    //                 Port = (uint)m.Address
-                    //             }
-                    //         }
-                    //     }).ConfigureAwait(false);
-                    // }
+                    if (memberRemoved)
+                    {
+                        await _gossip.AddAsync(new Proto.GossipEnvelope()
+                        {
+                            MemberFailed = new Proto.MemberFailedForMe()
+                            {
+                                Member = new Proto.MemberAddress()
+                                {
+                                    V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
+                                    Port = m.Address
+                                }
+                            }
+                        }).ConfigureAwait(false);
+                    }
 
                 }, null, TaskContinuationOptions.OnlyOnRanToCompletion);
 
@@ -109,13 +111,18 @@ namespace Surf.Core
         public async Task OnAck(Proto.Ack ack, Member fromMember)
         {
             // check if ack is actually from the current protocol period
-            // and from the pinged member
+            if (ack.LocalTime != _currentPeriod)
+            {
+                return;
+            }
 
             // check if the ack was received in 
             if (_currentTimeout.IsCompletedSuccessfully)
             {
                 return;
             }
+
+            _currentToken.Cancel();
 
             _currentSW.Stop();
             var elapsed = _currentSW.ElapsedMilliseconds;
@@ -129,6 +136,7 @@ namespace Surf.Core
             {
                 Ack = new Proto.Ack()
                 {
+                    LocalTime = ping.LocalTime
                 }
             };
 
@@ -136,7 +144,7 @@ namespace Surf.Core
             await _transport.SendMessageAsync(ackMessage, toMember: fromMember);
 
             // check if the member who pinged is new and start gossiping about it if so
-            bool isMemberNew = await _members.AddMemberAsync(fromMember);
+            var isMemberNew = await _members.AddMemberAsync(fromMember);
             if (isMemberNew)
             {
                 await _gossip.AddAsync(new Proto.GossipEnvelope()
@@ -146,7 +154,7 @@ namespace Surf.Core
                         Member = new Proto.MemberAddress()
                         {
                             V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = (uint)fromMember.Address
+                            Port = fromMember.Address
                         }
                     }
                 });

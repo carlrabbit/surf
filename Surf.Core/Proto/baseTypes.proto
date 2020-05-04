@@ -13,5 +13,5 @@ message MemberAddress {
         fixed32 v4 = 1;
         bytes v6 = 2;
     }
-    fixed32 port = 3; 
+    sfixed32 port = 3; 
 }

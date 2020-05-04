@@ -69,7 +69,7 @@ namespace Surf.Kestrel
                         Member = new Proto.MemberAddress()
                         {
                             V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = (uint)self.Address
+                            Port = self.Address
                         }
                     }
                 });
