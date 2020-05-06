@@ -38,8 +38,9 @@ namespace Surf.Core
 
         private int _currentPeriod = -1;
         private readonly Stopwatch _currentSW = new Stopwatch();
-        private Task _currentTimeout = null;
-        private CancellationTokenSource _currentToken;
+        //TODO: replace with int and interlocked
+        private bool _currentMemberAlive;
+        private bool _currentPingTimedOut;
 
         /// <summary>
         /// Starts a new protocol period by sending an initial ping to a random member
@@ -47,7 +48,66 @@ namespace Surf.Core
         /// </summary>
         public async Task DoProtocolPeriod()
         {
+            _currentMemberAlive = false;
+            _currentPingTimedOut = false;
             _currentPeriod = _state.IncreaseProtocolPeriod();
+
+            Member m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
+
+            // TODO: Start before or after? 
+            _currentSW.Restart();
+
+            await Task.WhenAll(
+               SendPingAsync(m),
+               MarkMemberAsFailedAsync(m),
+               EndProtocolPeriodAsync()
+           );
+
+        }
+
+        private async Task MarkMemberAsFailedAsync(Member m)//, CancellationToken ct)
+        {
+            //pick member
+            if (await _members.MemberCountAsync() == 0)
+            {
+                return;
+            }
+
+            await Task.Delay(await _state.GetCurrentPingTimeoutAsync());
+
+            if (_currentMemberAlive)
+            {
+                return;
+            }
+
+
+            _currentPingTimedOut = true;
+
+            var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
+
+            if (memberRemoved)
+            {
+                await _gossip.AddAsync(new Proto.GossipEnvelope()
+                {
+                    MemberFailed = new Proto.MemberFailedForMe()
+                    {
+                        Member = new Proto.MemberAddress()
+                        {
+                            V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
+                            Port = m.Address
+                        }
+                    }
+                }).ConfigureAwait(false);
+            }
+        }
+
+        private async Task EndProtocolPeriodAsync()
+        {
+            await Task.Delay(await _state.GetProtocolPeriodAsync());
+        }
+
+        private async Task SendPingAsync(Member m)
+        {
 
             //pick member
             if (await _members.MemberCountAsync() == 0)
@@ -55,16 +115,8 @@ namespace Surf.Core
                 return;
             }
 
-            var m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
-
-            // wait on response for X time 
-            if (_currentTimeout != null)
-            {
-                _currentToken.Cancel();
-            }
-
-
-            var pingMsg = new Proto.MessageEnvelope()
+            // send 
+            Proto.MessageEnvelope pingMsg = new Proto.MessageEnvelope()
             {
                 Ping = new Proto.Ping()
                 {
@@ -72,40 +124,11 @@ namespace Surf.Core
                 }
             };
 
-            pingMsg.Ping.Gossip.AddRange(await _gossip.FetchNextAsync(6));
+            //TODO: Add goosip number constant
+            pingMsg.Ping.Gossip.AddRange(await _gossip.FetchNextAsync(6).ConfigureAwait(false));
 
             // send ping
             await _transport.SendMessageAsync(pingMsg, m);
-
-            _currentToken = new CancellationTokenSource();
-
-            // TODO: Start before or after? 
-            _currentTimeout = Task.Delay(await _state.GetCurrentPingTimeoutAsync().ConfigureAwait(false), _currentToken.Token)
-                .ContinueWith(async (t, _) =>
-                {
-                    var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
-
-                    if (memberRemoved)
-                    {
-                        await _gossip.AddAsync(new Proto.GossipEnvelope()
-                        {
-                            MemberFailed = new Proto.MemberFailedForMe()
-                            {
-                                Member = new Proto.MemberAddress()
-                                {
-                                    V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                                    Port = m.Address
-                                }
-                            }
-                        }).ConfigureAwait(false);
-                    }
-
-                }, null, TaskContinuationOptions.OnlyOnRanToCompletion);
-
-
-            // TODO: Start before or after? 
-            _currentSW.Restart();
-
         }
 
         public async Task OnAck(Proto.Ack ack, Member fromMember)
@@ -116,14 +139,12 @@ namespace Surf.Core
                 return;
             }
 
-            // check if the ack was received in 
-            if (_currentTimeout.IsCompletedSuccessfully)
+            if (_currentPingTimedOut)
             {
                 return;
             }
 
-            _currentToken.Cancel();
-
+            _currentMemberAlive = true;
             _currentSW.Stop();
             var elapsed = _currentSW.ElapsedMilliseconds;
             // Console.WriteLine(elapsed);

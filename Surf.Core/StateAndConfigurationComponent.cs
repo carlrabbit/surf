@@ -25,7 +25,8 @@ namespace Surf.Core
         {
             //TODO: add cfg class
             _lambda = 3.0;
-            _pingTimeout = 500;
+            _pingTimeout = 300;
+            _protocolPeriodMs = 1000;
 
             // init internal defaults
             _clt = 0;
@@ -94,6 +95,12 @@ namespace Surf.Core
         public Task<int> GetCurrentPingTimeoutAsync()
         {
             return Task.FromResult(_pingTimeout);
+        }
+
+        private int _protocolPeriodMs;
+        public Task<int> GetProtocolPeriodAsync()
+        {
+            return Task.FromResult(_protocolPeriodMs);
         }
     }
 }
