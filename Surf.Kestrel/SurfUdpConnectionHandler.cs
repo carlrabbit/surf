@@ -37,8 +37,7 @@ namespace Surf.Kestrel
             {
                 StartMember(seedNodes[i], i == 0 ? seedNodes[0] - 1 : seedNodes[i - 1]);
             }
-            StartMember(6666, 6665);
-            StartMember(6667, 6666);
+
 
             int nextPort = seedNodes.Max() + 1;
             //   Task.Delay(100).Wait();
