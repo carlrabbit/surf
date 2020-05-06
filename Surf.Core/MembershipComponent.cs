@@ -93,6 +93,11 @@ namespace Surf.Core
         {
             using (await rwLock.WriterLockAsync().ConfigureAwait(false))
             {
+                if (_members.Count == 0)
+                {
+                    return null;
+                }
+
                 if (_randomListIndex >= _members.Count)
                 {
                     Shuffle(_members);
