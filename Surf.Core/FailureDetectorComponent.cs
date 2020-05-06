@@ -33,14 +33,12 @@ namespace Surf.Core
             _transport.SetFDC(this);
         }
 
-        private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
-
-
         private int _currentPeriod = -1;
+
         private readonly Stopwatch _currentSW = new Stopwatch();
-        //TODO: replace with int and interlocked
-        private bool _currentMemberAlive;
-        private bool _currentPingTimedOut;
+
+        private int _currentMemberAlive;
+        private int _currentPingTimedOut;
 
         /// <summary>
         /// Starts a new protocol period by sending an initial ping to a random member
@@ -48,8 +46,8 @@ namespace Surf.Core
         /// </summary>
         public async Task DoProtocolPeriod()
         {
-            _currentMemberAlive = false;
-            _currentPingTimedOut = false;
+            Interlocked.Exchange(ref _currentMemberAlive, 0);
+            Interlocked.Exchange(ref _currentPingTimedOut, 0);
             _currentPeriod = _state.IncreaseProtocolPeriod();
 
             Member m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
@@ -75,13 +73,12 @@ namespace Surf.Core
 
             await Task.Delay(await _state.GetCurrentPingTimeoutAsync());
 
-            if (_currentMemberAlive)
+            if (_currentMemberAlive == 1)
             {
                 return;
             }
 
-
-            _currentPingTimedOut = true;
+            Interlocked.Exchange(ref _currentPingTimedOut, 1);
 
             var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
 
@@ -139,12 +136,12 @@ namespace Surf.Core
                 return;
             }
 
-            if (_currentPingTimedOut)
+            if (_currentPingTimedOut == 1)
             {
                 return;
             }
 
-            _currentMemberAlive = true;
+            Interlocked.Exchange(ref _currentMemberAlive, 1);
             _currentSW.Stop();
             var elapsed = _currentSW.ElapsedMilliseconds;
             // Console.WriteLine(elapsed);
