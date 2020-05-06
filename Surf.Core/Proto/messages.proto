@@ -22,9 +22,9 @@ message Ping {
 }
 
 message PingReq {
-    MemberAddress member = 1;
-    
-    repeated GossipEnvelope gossip = 2;
+    MemberAddress fromMember = 1;
+    MemberAddress toMember = 2;
+    sfixed32 localTime = 3;
 }
 
 message Ack {
@@ -32,6 +32,7 @@ message Ack {
 }
 
 message AckReq {
-    MemberAddress ofMember = 1;
-
+    MemberAddress fromMember = 1;
+    MemberAddress toMember = 2;
+    sfixed32 localTime = 3;
 }

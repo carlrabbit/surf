@@ -33,7 +33,7 @@ namespace Surf.Core
             _transport.SetFDC(this);
         }
 
-        private int _currentPeriod = -1;
+        private int _currentProtocolPeriod = -1;
 
         private readonly Stopwatch _currentSW = new Stopwatch();
 
@@ -48,7 +48,7 @@ namespace Surf.Core
         {
             Interlocked.Exchange(ref _currentMemberAlive, 0);
             Interlocked.Exchange(ref _currentPingTimedOut, 0);
-            _currentPeriod = _state.IncreaseProtocolPeriod();
+            _currentProtocolPeriod = _state.IncreaseProtocolPeriod();
 
             Member m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
 
@@ -57,15 +57,70 @@ namespace Surf.Core
 
             await Task.WhenAll(
                SendPingAsync(m),
-               MarkMemberAsFailedAsync(m),
-               EndProtocolPeriodAsync()
+               SuspectMemberToBeDead(m),
+               EndProtocolPeriodAsync(m)
            );
 
         }
 
+        private async Task SuspectMemberToBeDead(Member m)//, CancellationToken ct)
+        {
+            //TODO: don't check but make Membership component methods work with empty list
+            if (await _members.MemberCountAsync() == 0)
+            {
+                return;
+            }
+
+            await Task.Delay(await _state.GetCurrentPingTimeoutAsync());
+
+            if (_currentMemberAlive == 1)
+            {
+                return;
+            }
+
+            Interlocked.Exchange(ref _currentPingTimedOut, 1);
+
+            //send ping request to k members
+            //TODO: don't send more than one ping req to an individual member (and add a random pick without side effects)
+            var randomMembersToPingReq = new List<Member>(4/*k*/);
+
+            for (var i = 0; i < 4/*k*/; i++)
+            {
+                var randomMember = await _members.NextRandomMemberAsync();
+
+                randomMembersToPingReq.Append(randomMember);
+
+                await _transport.SendMessageAsync(new Proto.MessageEnvelope()
+                {
+                    PingReq = new Proto.PingReq()
+                    {
+                        FromMember = Member.ToProto(await _state.GetSelfAsync().ConfigureAwait(false)),
+                        ToMember = Member.ToProto(m),
+                        LocalTime = _currentProtocolPeriod
+                    }
+                }, randomMember);
+            }
+
+            // var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
+
+            // if (memberRemoved)
+            // {
+            //     await _gossip.AddAsync(new Proto.GossipEnvelope()
+            //     {
+            //         MemberFailed = new Proto.MemberFailedForMe()
+            //         {
+            //             Member = new Proto.MemberAddress()
+            //             {
+            //                 V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
+            //                 Port = m.Address
+            //             }
+            //         }
+            //     }).ConfigureAwait(false);
+            // }
+        }
+
         private async Task MarkMemberAsFailedAsync(Member m)//, CancellationToken ct)
         {
-            //pick member
             if (await _members.MemberCountAsync() == 0)
             {
                 return;
@@ -98,30 +153,48 @@ namespace Surf.Core
             }
         }
 
-        private async Task EndProtocolPeriodAsync()
+        private async Task EndProtocolPeriodAsync(Member m)
         {
             await Task.Delay(await _state.GetProtocolPeriodAsync());
+
+            if (_currentMemberAlive == 0)
+            {
+                var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
+
+                if (memberRemoved)
+                {
+                    await _gossip.AddAsync(new Proto.GossipEnvelope()
+                    {
+                        MemberFailed = new Proto.MemberFailedForMe()
+                        {
+                            Member = new Proto.MemberAddress()
+                            {
+                                V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
+                                Port = m.Address
+                            }
+                        }
+                    }).ConfigureAwait(false);
+                }
+            }
         }
 
         private async Task SendPingAsync(Member m)
         {
-
             //pick member
             if (await _members.MemberCountAsync() == 0)
             {
                 return;
             }
 
-            // send 
-            Proto.MessageEnvelope pingMsg = new Proto.MessageEnvelope()
+            // send a ping 
+            var pingMsg = new Proto.MessageEnvelope()
             {
                 Ping = new Proto.Ping()
                 {
-                    LocalTime = _currentPeriod
+                    LocalTime = _currentProtocolPeriod
                 }
             };
 
-            //TODO: Add goosip number constant
             pingMsg.Ping.Gossip.AddRange(await _gossip.FetchNextAsync(6).ConfigureAwait(false));
 
             // send ping
@@ -131,7 +204,7 @@ namespace Surf.Core
         public async Task OnAck(Proto.Ack ack, Member fromMember)
         {
             // check if ack is actually from the current protocol period
-            if (ack.LocalTime != _currentPeriod)
+            if (ack.LocalTime != _currentProtocolPeriod)
             {
                 return;
             }
@@ -147,6 +220,54 @@ namespace Surf.Core
             // Console.WriteLine(elapsed);
             await _state.UpdateAverageRoundTripTimeAsync(elapsed);
         }
+
+        public async Task OnAckReq(Proto.AckReq ackReq, Member fromMember)
+        {
+            //if ping request is addressed to the current member node, mark _current ping target as alive
+            if (ackReq.ToMember.Port == (await _state.GetSelfAsync().ConfigureAwait(false)).Address)
+            {
+                //if local time matches
+                if (ackReq.LocalTime != _currentProtocolPeriod)
+                {
+                    return;
+                }
+                Interlocked.Exchange(ref _currentMemberAlive, 1);
+            }
+            //else forward the AckReq
+            else
+            {
+                await _transport.SendMessageAsync(new Proto.MessageEnvelope()
+                {
+                    AckReq = ackReq
+                }, Member.FromProto(ackReq.ToMember));
+            }
+        }
+
+        public async Task OnPingReq(Proto.PingReq pr, Member fromMember)
+        {
+            //if ping request is addressed to the current member node, send a ackReq
+            if (pr.ToMember.Port == (await _state.GetSelfAsync().ConfigureAwait(false)).Address)
+            {
+                await _transport.SendMessageAsync(new Proto.MessageEnvelope()
+                {
+                    AckReq = new Proto.AckReq()
+                    {
+                        FromMember = Member.ToProto(await _state.GetSelfAsync().ConfigureAwait(false)),
+                        ToMember = pr.FromMember,
+                        LocalTime = pr.LocalTime
+                    }
+                }, fromMember);
+            }
+            //else create ping to target member
+            else
+            {
+                await _transport.SendMessageAsync(new Proto.MessageEnvelope()
+                {
+                    PingReq = pr
+                }, Member.FromProto(pr.ToMember));
+            }
+        }
+
 
         public async Task OnPing(Proto.Ping ping, Member fromMember)
         {

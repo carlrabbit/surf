@@ -55,6 +55,12 @@ namespace Surf.Core
                         case Proto.MessageEnvelope.TypeOneofCase.Ack:
                             await _fdc.OnAck(udpEnvelope.Ack, requester);
                             break;
+                        case Proto.MessageEnvelope.TypeOneofCase.PingReq:
+                            await _fdc.OnPingReq(udpEnvelope.PingReq, requester);
+                            break;
+                        case Proto.MessageEnvelope.TypeOneofCase.AckReq:
+                            await _fdc.OnAckReq(udpEnvelope.AckReq, requester);
+                            break;
                         default:
                             break;
                     }

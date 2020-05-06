@@ -31,18 +31,21 @@ namespace Surf.Kestrel
 
         public SurfS()
         {
-            StartMember(6666, null);
+            int[] seedNodes = new int[] { 13332, 13333 };
+
+            for (int i = 0; i < seedNodes.Length; i++)
+            {
+                StartMember(seedNodes[i], i == 0 ? seedNodes[0] - 1 : seedNodes[i - 1]);
+            }
+            StartMember(6666, 6665);
             StartMember(6667, 6666);
 
-            int port = 6668;
-
-            for (int i = 0; i < 20; i++, port++)
+            int nextPort = seedNodes.Max() + 1;
+            //   Task.Delay(100).Wait();
+            for (int i = 0; i < 10; i++, nextPort++)
             {
-                StartMember(port, joinPort: 6666);
-            }
-            for (int i = 0; i < 20; i++, port++)
-            {
-                StartMember(port, joinPort: 6667);
+                StartMember(nextPort, joinPort: seedNodes[nextPort % seedNodes.Length]);
+                Task.Delay(1000).Wait();
             }
         }
 
@@ -53,7 +56,7 @@ namespace Surf.Kestrel
                 Address = port
             };
 
-            var scC = new StateAndConfigurationComponent();
+            var scC = new StateAndConfigurationComponent(port);
             var tc = new TransportComponent(scC, port);
             var mC = new MembershipComponent(scC);
             var gl = new DisseminationComponent(scC);
@@ -77,11 +80,11 @@ namespace Surf.Kestrel
                 if (joinPort.HasValue)
                 {
                     await mC.AddMemberAsync(new Member() { Address = joinPort.Value });
-                    //await cli.SendAsync(ping.ToByteArray(), ping.CalculateSize(), new IPEndPoint(IPAddress.IPv6Loopback, joinPort.Value));
                 }
 
                 await tc.ListenAsync();
             });
+
             // start error component
             Task.Run(async () =>
             {
@@ -90,8 +93,6 @@ namespace Surf.Kestrel
                     Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
 
                     await fdc.DoProtocolPeriod();
-
-                    await Task.Delay(1000);
                 }
             });
         }

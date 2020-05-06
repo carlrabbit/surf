@@ -21,17 +21,27 @@ namespace Surf.Core
     {
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
 
-        public StateAndConfigurationComponent()
+        public StateAndConfigurationComponent(int port)
         {
             //TODO: add cfg class
             _lambda = 3.0;
-            _pingTimeout = 300;
-            _protocolPeriodMs = 1000;
+            _pingTimeout = 100;
+            _protocolPeriodDurationMs = 1000;
+            _self = new Member()
+            {
+                Address = port
+            };
 
             // init internal defaults
             _clt = 0;
-            _errorCycle = 0;
+            _protocolPeriod = 0;
             _meanRoundTripTime = _pingTimeout;
+        }
+
+        private Member _self;
+        public Task<Member> GetSelfAsync()
+        {
+            return Task.FromResult(_self);
         }
 
         private double _lambda;
@@ -40,7 +50,7 @@ namespace Surf.Core
         {
             using (await _rwLock.ReaderLockAsync())
             {
-                return _clt;
+                return Math.Max(_lambda, _clt);
             }
         }
 
@@ -48,7 +58,7 @@ namespace Surf.Core
         {
             using (await _rwLock.WriterLockAsync())
             {
-                _clt = Math.Ceiling(_lambda * Math.Log10(activeMembers));
+                _clt = Math.Ceiling(_lambda * Math.Log10(activeMembers + 1));
             }
         }
 
@@ -79,16 +89,16 @@ namespace Surf.Core
             }
         }
 
-        private int _errorCycle;
+        private int _protocolPeriod;
         public int IncreaseProtocolPeriod()
         {
-            return Interlocked.Increment(ref _errorCycle);
+            return Interlocked.Increment(ref _protocolPeriod);
             //TODO: handle overflows
         }
 
         public Task<int> GetErrorCycleNumberAsync()
         {
-            return Task.FromResult(_errorCycle);
+            return Task.FromResult(_protocolPeriod);
         }
 
         private int _pingTimeout;
@@ -97,10 +107,10 @@ namespace Surf.Core
             return Task.FromResult(_pingTimeout);
         }
 
-        private int _protocolPeriodMs;
+        private int _protocolPeriodDurationMs;
         public Task<int> GetProtocolPeriodAsync()
         {
-            return Task.FromResult(_protocolPeriodMs);
+            return Task.FromResult(_protocolPeriodDurationMs);
         }
     }
 }

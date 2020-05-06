@@ -30,19 +30,21 @@ namespace Surf.Proto {
             "CzINLnN1cmYuUGluZ1JlcUgAEhgKA2FjaxgDIAEoCzIJLnN1cmYuQWNrSAAS",
             "HgoGYWNrUmVxGAQgASgLMgwuc3VyZi5BY2tSZXFIAEIGCgR0eXBlIj8KBFBp",
             "bmcSJAoGZ29zc2lwGAEgAygLMhQuc3VyZi5Hb3NzaXBFbnZlbG9wZRIRCgls",
-            "b2NhbFRpbWUYAiABKA8iVAoHUGluZ1JlcRIjCgZtZW1iZXIYASABKAsyEy5z",
-            "dXJmLk1lbWJlckFkZHJlc3MSJAoGZ29zc2lwGAIgAygLMhQuc3VyZi5Hb3Nz",
-            "aXBFbnZlbG9wZSIYCgNBY2sSEQoJbG9jYWxUaW1lGAEgASgPIi8KBkFja1Jl",
-            "cRIlCghvZk1lbWJlchgBIAEoCzITLnN1cmYuTWVtYmVyQWRkcmVzc0INqgIK",
-            "U3VyZi5Qcm90b2IGcHJvdG8z"));
+            "b2NhbFRpbWUYAiABKA8ibAoHUGluZ1JlcRInCgpmcm9tTWVtYmVyGAEgASgL",
+            "MhMuc3VyZi5NZW1iZXJBZGRyZXNzEiUKCHRvTWVtYmVyGAIgASgLMhMuc3Vy",
+            "Zi5NZW1iZXJBZGRyZXNzEhEKCWxvY2FsVGltZRgDIAEoDyIYCgNBY2sSEQoJ",
+            "bG9jYWxUaW1lGAEgASgPImsKBkFja1JlcRInCgpmcm9tTWVtYmVyGAEgASgL",
+            "MhMuc3VyZi5NZW1iZXJBZGRyZXNzEiUKCHRvTWVtYmVyGAIgASgLMhMuc3Vy",
+            "Zi5NZW1iZXJBZGRyZXNzEhEKCWxvY2FsVGltZRgDIAEoD0INqgIKU3VyZi5Q",
+            "cm90b2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Surf.Proto.BaseTypesReflection.Descriptor, global::Surf.Proto.GossipReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.MessageEnvelope), global::Surf.Proto.MessageEnvelope.Parser, new[]{ "Ping", "PingReq", "Ack", "AckReq" }, new[]{ "Type" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.Ping), global::Surf.Proto.Ping.Parser, new[]{ "Gossip", "LocalTime" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.PingReq), global::Surf.Proto.PingReq.Parser, new[]{ "Member", "Gossip" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.PingReq), global::Surf.Proto.PingReq.Parser, new[]{ "FromMember", "ToMember", "LocalTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.Ack), global::Surf.Proto.Ack.Parser, new[]{ "LocalTime" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.AckReq), global::Surf.Proto.AckReq.Parser, new[]{ "OfMember" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Surf.Proto.AckReq), global::Surf.Proto.AckReq.Parser, new[]{ "FromMember", "ToMember", "LocalTime" }, null, null, null, null)
           }));
     }
     #endregion
@@ -505,8 +507,9 @@ namespace Surf.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public PingReq(PingReq other) : this() {
-      member_ = other.member_ != null ? other.member_.Clone() : null;
-      gossip_ = other.gossip_.Clone();
+      fromMember_ = other.fromMember_ != null ? other.fromMember_.Clone() : null;
+      toMember_ = other.toMember_ != null ? other.toMember_.Clone() : null;
+      localTime_ = other.localTime_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -515,25 +518,37 @@ namespace Surf.Proto {
       return new PingReq(this);
     }
 
-    /// <summary>Field number for the "member" field.</summary>
-    public const int MemberFieldNumber = 1;
-    private global::Surf.Proto.MemberAddress member_;
+    /// <summary>Field number for the "fromMember" field.</summary>
+    public const int FromMemberFieldNumber = 1;
+    private global::Surf.Proto.MemberAddress fromMember_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Surf.Proto.MemberAddress Member {
-      get { return member_; }
+    public global::Surf.Proto.MemberAddress FromMember {
+      get { return fromMember_; }
       set {
-        member_ = value;
+        fromMember_ = value;
       }
     }
 
-    /// <summary>Field number for the "gossip" field.</summary>
-    public const int GossipFieldNumber = 2;
-    private static readonly pb::FieldCodec<global::Surf.Proto.GossipEnvelope> _repeated_gossip_codec
-        = pb::FieldCodec.ForMessage(18, global::Surf.Proto.GossipEnvelope.Parser);
-    private readonly pbc::RepeatedField<global::Surf.Proto.GossipEnvelope> gossip_ = new pbc::RepeatedField<global::Surf.Proto.GossipEnvelope>();
+    /// <summary>Field number for the "toMember" field.</summary>
+    public const int ToMemberFieldNumber = 2;
+    private global::Surf.Proto.MemberAddress toMember_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::Surf.Proto.GossipEnvelope> Gossip {
-      get { return gossip_; }
+    public global::Surf.Proto.MemberAddress ToMember {
+      get { return toMember_; }
+      set {
+        toMember_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "localTime" field.</summary>
+    public const int LocalTimeFieldNumber = 3;
+    private int localTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int LocalTime {
+      get { return localTime_; }
+      set {
+        localTime_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -549,16 +564,18 @@ namespace Surf.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (!object.Equals(Member, other.Member)) return false;
-      if(!gossip_.Equals(other.gossip_)) return false;
+      if (!object.Equals(FromMember, other.FromMember)) return false;
+      if (!object.Equals(ToMember, other.ToMember)) return false;
+      if (LocalTime != other.LocalTime) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (member_ != null) hash ^= Member.GetHashCode();
-      hash ^= gossip_.GetHashCode();
+      if (fromMember_ != null) hash ^= FromMember.GetHashCode();
+      if (toMember_ != null) hash ^= ToMember.GetHashCode();
+      if (LocalTime != 0) hash ^= LocalTime.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -572,11 +589,18 @@ namespace Surf.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (member_ != null) {
+      if (fromMember_ != null) {
         output.WriteRawTag(10);
-        output.WriteMessage(Member);
+        output.WriteMessage(FromMember);
       }
-      gossip_.WriteTo(output, _repeated_gossip_codec);
+      if (toMember_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(ToMember);
+      }
+      if (LocalTime != 0) {
+        output.WriteRawTag(29);
+        output.WriteSFixed32(LocalTime);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -585,10 +609,15 @@ namespace Surf.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (member_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Member);
+      if (fromMember_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(FromMember);
       }
-      size += gossip_.CalculateSize(_repeated_gossip_codec);
+      if (toMember_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ToMember);
+      }
+      if (LocalTime != 0) {
+        size += 1 + 4;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -600,13 +629,21 @@ namespace Surf.Proto {
       if (other == null) {
         return;
       }
-      if (other.member_ != null) {
-        if (member_ == null) {
-          Member = new global::Surf.Proto.MemberAddress();
+      if (other.fromMember_ != null) {
+        if (fromMember_ == null) {
+          FromMember = new global::Surf.Proto.MemberAddress();
         }
-        Member.MergeFrom(other.Member);
+        FromMember.MergeFrom(other.FromMember);
       }
-      gossip_.Add(other.gossip_);
+      if (other.toMember_ != null) {
+        if (toMember_ == null) {
+          ToMember = new global::Surf.Proto.MemberAddress();
+        }
+        ToMember.MergeFrom(other.ToMember);
+      }
+      if (other.LocalTime != 0) {
+        LocalTime = other.LocalTime;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -619,14 +656,21 @@ namespace Surf.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            if (member_ == null) {
-              Member = new global::Surf.Proto.MemberAddress();
+            if (fromMember_ == null) {
+              FromMember = new global::Surf.Proto.MemberAddress();
             }
-            input.ReadMessage(Member);
+            input.ReadMessage(FromMember);
             break;
           }
           case 18: {
-            gossip_.AddEntriesFrom(input, _repeated_gossip_codec);
+            if (toMember_ == null) {
+              ToMember = new global::Surf.Proto.MemberAddress();
+            }
+            input.ReadMessage(ToMember);
+            break;
+          }
+          case 29: {
+            LocalTime = input.ReadSFixed32();
             break;
           }
         }
@@ -789,7 +833,9 @@ namespace Surf.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public AckReq(AckReq other) : this() {
-      ofMember_ = other.ofMember_ != null ? other.ofMember_.Clone() : null;
+      fromMember_ = other.fromMember_ != null ? other.fromMember_.Clone() : null;
+      toMember_ = other.toMember_ != null ? other.toMember_.Clone() : null;
+      localTime_ = other.localTime_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -798,14 +844,36 @@ namespace Surf.Proto {
       return new AckReq(this);
     }
 
-    /// <summary>Field number for the "ofMember" field.</summary>
-    public const int OfMemberFieldNumber = 1;
-    private global::Surf.Proto.MemberAddress ofMember_;
+    /// <summary>Field number for the "fromMember" field.</summary>
+    public const int FromMemberFieldNumber = 1;
+    private global::Surf.Proto.MemberAddress fromMember_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public global::Surf.Proto.MemberAddress OfMember {
-      get { return ofMember_; }
+    public global::Surf.Proto.MemberAddress FromMember {
+      get { return fromMember_; }
       set {
-        ofMember_ = value;
+        fromMember_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "toMember" field.</summary>
+    public const int ToMemberFieldNumber = 2;
+    private global::Surf.Proto.MemberAddress toMember_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Surf.Proto.MemberAddress ToMember {
+      get { return toMember_; }
+      set {
+        toMember_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "localTime" field.</summary>
+    public const int LocalTimeFieldNumber = 3;
+    private int localTime_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int LocalTime {
+      get { return localTime_; }
+      set {
+        localTime_ = value;
       }
     }
 
@@ -822,14 +890,18 @@ namespace Surf.Proto {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (!object.Equals(OfMember, other.OfMember)) return false;
+      if (!object.Equals(FromMember, other.FromMember)) return false;
+      if (!object.Equals(ToMember, other.ToMember)) return false;
+      if (LocalTime != other.LocalTime) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override int GetHashCode() {
       int hash = 1;
-      if (ofMember_ != null) hash ^= OfMember.GetHashCode();
+      if (fromMember_ != null) hash ^= FromMember.GetHashCode();
+      if (toMember_ != null) hash ^= ToMember.GetHashCode();
+      if (LocalTime != 0) hash ^= LocalTime.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -843,9 +915,17 @@ namespace Surf.Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
-      if (ofMember_ != null) {
+      if (fromMember_ != null) {
         output.WriteRawTag(10);
-        output.WriteMessage(OfMember);
+        output.WriteMessage(FromMember);
+      }
+      if (toMember_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(ToMember);
+      }
+      if (LocalTime != 0) {
+        output.WriteRawTag(29);
+        output.WriteSFixed32(LocalTime);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -855,8 +935,14 @@ namespace Surf.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
       int size = 0;
-      if (ofMember_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(OfMember);
+      if (fromMember_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(FromMember);
+      }
+      if (toMember_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(ToMember);
+      }
+      if (LocalTime != 0) {
+        size += 1 + 4;
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -869,11 +955,20 @@ namespace Surf.Proto {
       if (other == null) {
         return;
       }
-      if (other.ofMember_ != null) {
-        if (ofMember_ == null) {
-          OfMember = new global::Surf.Proto.MemberAddress();
+      if (other.fromMember_ != null) {
+        if (fromMember_ == null) {
+          FromMember = new global::Surf.Proto.MemberAddress();
         }
-        OfMember.MergeFrom(other.OfMember);
+        FromMember.MergeFrom(other.FromMember);
+      }
+      if (other.toMember_ != null) {
+        if (toMember_ == null) {
+          ToMember = new global::Surf.Proto.MemberAddress();
+        }
+        ToMember.MergeFrom(other.ToMember);
+      }
+      if (other.LocalTime != 0) {
+        LocalTime = other.LocalTime;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -887,10 +982,21 @@ namespace Surf.Proto {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            if (ofMember_ == null) {
-              OfMember = new global::Surf.Proto.MemberAddress();
+            if (fromMember_ == null) {
+              FromMember = new global::Surf.Proto.MemberAddress();
             }
-            input.ReadMessage(OfMember);
+            input.ReadMessage(FromMember);
+            break;
+          }
+          case 18: {
+            if (toMember_ == null) {
+              ToMember = new global::Surf.Proto.MemberAddress();
+            }
+            input.ReadMessage(ToMember);
+            break;
+          }
+          case 29: {
+            LocalTime = input.ReadSFixed32();
             break;
           }
         }
