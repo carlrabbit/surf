@@ -31,20 +31,18 @@ namespace Surf.Kestrel
 
         public SurfS()
         {
-            int[] seedNodes = new int[] { 13332, 13333 };
+            int[] seedNodes = new int[] { 6666, 6667, 6668 };
 
             for (int i = 0; i < seedNodes.Length; i++)
             {
-                StartMember(seedNodes[i], i == 0 ? seedNodes[0] - 1 : seedNodes[i - 1]);
+                StartMember(seedNodes[i], i == 0 ? (int?)null : seedNodes[i - 1]);
             }
 
 
             int nextPort = seedNodes.Max() + 1;
-            //   Task.Delay(100).Wait();
-            for (int i = 0; i < 10; i++, nextPort++)
+            for (int i = 0; i < 40; i++, nextPort++)
             {
                 StartMember(nextPort, joinPort: seedNodes[nextPort % seedNodes.Length]);
-                Task.Delay(1000).Wait();
             }
         }
 
