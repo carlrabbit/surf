@@ -20,9 +20,12 @@ namespace Surf.Core
     public class StateAndConfigurationComponent
     {
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
+        private readonly MetricComponent _mc;
 
-        public StateAndConfigurationComponent(int port)
+        public StateAndConfigurationComponent(int port, MetricComponent metricComponent)
         {
+            _mc = metricComponent;
+
             //TODO: add cfg class
             _lambda = 3.0;
             _pingTimeout = 100;
@@ -79,6 +82,7 @@ namespace Surf.Core
                 }
                 _meanRoundTripTime = _measures.Average();
             }
+            _mc.UpdateAverageTurnaroundTime(_meanRoundTripTime);
         }
 
         public async Task<double> GetAverageRoundTripTimeAsync()

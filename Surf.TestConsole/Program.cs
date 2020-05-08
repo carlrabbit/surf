@@ -62,7 +62,9 @@ namespace Surf.TestConsole
                 Address = port
             };
 
-            var scC = new StateAndConfigurationComponent(port);
+            var metricComponent = new MetricComponent();
+            var scC = new StateAndConfigurationComponent(port, metricComponent);
+
             var tc = new TransportComponent(scC);
             var mC = new MembershipComponent(scC);
             var gl = new DisseminationComponent(scC);
@@ -98,6 +100,7 @@ namespace Surf.TestConsole
                 {
                     if (tokenSource.IsCancellationRequested) { return; }
                     Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
+                    Console.WriteLine(await metricComponent.Dump());
 
                     await fdc.DoProtocolPeriod();
                 }
