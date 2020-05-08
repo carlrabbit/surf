@@ -11,11 +11,11 @@ Console.WriteLine("test");
 // _cli.Dispose();
 
 
-Console.WriteLine(new UdpClient().Send(new byte[] { 2, 3, 4 }, 3, new IPEndPoint(IPAddress.Loopback, 2223)));
+//Console.WriteLine(new UdpClient().Send(new byte[] { 2, 3, 4 }, 3, new IPEndPoint(IPAddress.Loopback, 2223)));
 
 class X
 {
-    void test()
+    void Test()
     {
         if (true)
         {

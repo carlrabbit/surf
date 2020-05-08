@@ -63,7 +63,7 @@ namespace Surf.Core
         /// </summary>
         public async Task<List<Surf.Proto.GossipEnvelope>> FetchNextAsync(int next)
         {
-            double maxAge = await _state.GetChatterLifeTimeAsync();
+            var maxAge = await _state.GetChatterLifeTimeAsync();
             using (await _rwLock.WriterLockAsync())
             {
                 var elements = new List<Surf.Proto.GossipEnvelope>(next);

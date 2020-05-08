@@ -38,7 +38,7 @@ namespace Surf.Core
             _meanRoundTripTime = _pingTimeout;
         }
 
-        private Member _self;
+        private readonly Member _self;
         public Task<Member> GetSelfAsync()
         {
             return Task.FromResult(_self);

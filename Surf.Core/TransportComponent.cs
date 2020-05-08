@@ -25,6 +25,7 @@ namespace Surf.Core
             _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, port));
         }
 
+        //TODO: will be register message handler
         public void SetFDC(FailureDetectorComponent fdc)
         {
             Interlocked.Exchange(ref _fdc, fdc);
@@ -44,26 +45,10 @@ namespace Surf.Core
 
                 try
                 {
-                    var udpEnvelope = Surf.Proto.MessageEnvelope.Parser.ParseFrom(r.Buffer);
+                    var envelope = Surf.Proto.MessageEnvelope.Parser.ParseFrom(r.Buffer);
                     var requester = new Surf.Core.Member() { Address = r.RemoteEndPoint.Port };
 
-                    switch (udpEnvelope.TypeCase)
-                    {
-                        case Proto.MessageEnvelope.TypeOneofCase.Ping:
-                            await _fdc.OnPing(udpEnvelope.Ping, requester);
-                            break;
-                        case Proto.MessageEnvelope.TypeOneofCase.Ack:
-                            await _fdc.OnAck(udpEnvelope.Ack, requester);
-                            break;
-                        case Proto.MessageEnvelope.TypeOneofCase.PingReq:
-                            await _fdc.OnPingReq(udpEnvelope.PingReq, requester);
-                            break;
-                        case Proto.MessageEnvelope.TypeOneofCase.AckReq:
-                            await _fdc.OnAckReq(udpEnvelope.AckReq, requester);
-                            break;
-                        default:
-                            break;
-                    }
+                    await _fdc.HandleMessage(envelope, requester);
                 }
                 catch (Google.Protobuf.InvalidProtocolBufferException)
                 {

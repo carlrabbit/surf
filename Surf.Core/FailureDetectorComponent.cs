@@ -50,7 +50,7 @@ namespace Surf.Core
             Interlocked.Exchange(ref _currentPingTimedOut, 0);
             _currentProtocolPeriod = _state.IncreaseProtocolPeriod();
 
-            Member m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
+            var m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
 
             if (m == null)
             {
@@ -103,40 +103,6 @@ namespace Surf.Core
             }
         }
 
-        // private async Task MarkMemberAsFailedAsync(Member m)//, CancellationToken ct)
-        // {
-        //     if (await _members.MemberCountAsync() == 0)
-        //     {
-        //         return;
-        //     }
-
-        //     await Task.Delay(await _state.GetCurrentPingTimeoutAsync());
-
-        //     if (_currentMemberAlive == 1)
-        //     {
-        //         return;
-        //     }
-
-        //     Interlocked.Exchange(ref _currentPingTimedOut, 1);
-
-        //     var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
-
-        //     if (memberRemoved)
-        //     {
-        //         await _gossip.AddAsync(new Proto.GossipEnvelope()
-        //         {
-        //             MemberFailed = new Proto.MemberFailedForMe()
-        //             {
-        //                 Member = new Proto.MemberAddress()
-        //                 {
-        //                     V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-        //                     Port = m.Address
-        //                 }
-        //             }
-        //         }).ConfigureAwait(false);
-        //     }
-        // }
-
         private async Task EndProtocolPeriodAsync(Member m)
         {
             await Task.Delay(await _state.GetProtocolPeriodAsync());
@@ -179,7 +145,28 @@ namespace Surf.Core
             await _transport.SendMessageAsync(pingMsg, m);
         }
 
-        public async Task OnAck(Proto.Ack ack, Member fromMember)
+        public async Task HandleMessage(Proto.MessageEnvelope message, Member fromMember)
+        {
+            switch (message.TypeCase)
+            {
+                case Proto.MessageEnvelope.TypeOneofCase.Ping:
+                    await OnPing(message.Ping, fromMember);
+                    break;
+                case Proto.MessageEnvelope.TypeOneofCase.Ack:
+                    await OnAck(message.Ack, fromMember);
+                    break;
+                case Proto.MessageEnvelope.TypeOneofCase.PingReq:
+                    await OnPingReq(message.PingReq, fromMember);
+                    break;
+                case Proto.MessageEnvelope.TypeOneofCase.AckReq:
+                    await OnAckReq(message.AckReq, fromMember);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private async Task OnAck(Proto.Ack ack, Member fromMember)
         {
             // check if ack is actually from the current protocol period
             if (ack.LocalTime != _currentProtocolPeriod)
@@ -199,7 +186,7 @@ namespace Surf.Core
             await _state.UpdateAverageRoundTripTimeAsync(elapsed);
         }
 
-        public async Task OnAckReq(Proto.AckReq ackReq, Member fromMember)
+        private async Task OnAckReq(Proto.AckReq ackReq, Member fromMember)
         {
             //if ping request is addressed to the current member node, mark _current ping target as alive
             if (ackReq.ToMember.Port == (await _state.GetSelfAsync().ConfigureAwait(false)).Address)
@@ -221,7 +208,7 @@ namespace Surf.Core
             }
         }
 
-        public async Task OnPingReq(Proto.PingReq pr, Member fromMember)
+        private async Task OnPingReq(Proto.PingReq pr, Member fromMember)
         {
             //if ping request is addressed to the current member node, send a ackReq
             if (pr.ToMember.Port == (await _state.GetSelfAsync().ConfigureAwait(false)).Address)
@@ -247,7 +234,7 @@ namespace Surf.Core
         }
 
 
-        public async Task OnPing(Proto.Ping ping, Member fromMember)
+        private async Task OnPing(Proto.Ping ping, Member fromMember)
         {
             var ackMessage = new Proto.MessageEnvelope()
             {
@@ -283,12 +270,12 @@ namespace Surf.Core
                 switch (g.MessageTypeCase)
                 {
                     case Proto.GossipEnvelope.MessageTypeOneofCase.MemberJoined:
-                        bool newMember = await _members.AddMemberAsync(new Member()
+                        var isNewMember = await _members.AddMemberAsync(new Member()
                         {
                             Address = (int)g.MemberJoined.Member.Port
                         });
 
-                        if (newMember)
+                        if (isNewMember)
                         {
                             await _gossip.AddAsync(new Proto.GossipEnvelope()
                             {
@@ -301,12 +288,12 @@ namespace Surf.Core
 
                         break;
                     case Proto.GossipEnvelope.MessageTypeOneofCase.MemberFailed:
-                        bool memberRemoved = await _members.RemoveMemberAsync(new Member()
+                        var memberWasRemoved = await _members.RemoveMemberAsync(new Member()
                         {
                             Address = (int)g.MemberFailed.Member.Port
                         });
 
-                        if (memberRemoved)
+                        if (memberWasRemoved)
                         {
                             await _gossip.AddAsync(new Proto.GossipEnvelope()
                             {
