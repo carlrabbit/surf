@@ -19,10 +19,10 @@ namespace Surf.Core
 
         private FailureDetectorComponent _fdc = null; //TEMP CODE
 
-        public TransportComponent(StateAndConfigurationComponent state,/*TEMP*/ int port)
+        public TransportComponent(StateAndConfigurationComponent state)
         {
             _state = state;
-            _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, port));
+            _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, _state.GetSelf().Address));
         }
 
         //TODO: will be register message handler

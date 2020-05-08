@@ -54,7 +54,7 @@ namespace Surf.Kestrel
             };
 
             var scC = new StateAndConfigurationComponent(port);
-            var tc = new TransportComponent(scC, port);
+            var tc = new TransportComponent(scC);
             var mC = new MembershipComponent(scC);
             var gl = new DisseminationComponent(scC);
             var fdc = new FailureDetectorComponent(scC, tc, mC, gl);

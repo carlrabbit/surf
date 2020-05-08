@@ -22,14 +22,19 @@ namespace Surf.Core
         private List<Member> _members = new List<Member>();
         private int _randomListIndex = 0;
         private readonly Random _rng = new Random();
-        public async Task<bool> AddMemberAsync(Member m)
+        public async Task<bool> AddMemberAsync(Member member)
         {
+            if (member.Address == _state.GetSelf().Address)
+            {
+                return false;
+            }
+
             using (await _rwLock.WriterLockAsync().ConfigureAwait(false))
             {
-                if (!_members.Any(e => e.Address == m.Address))
+                if (!_members.Any(e => e.Address == member.Address))
                 {
                     //insert new member at a random position
-                    _members.Insert(_rng.Next(0, _members.Count), m);
+                    _members.Insert(_rng.Next(0, _members.Count), member);
 
                     await _state.UpdateMemberCountAsync(_members.Count).ConfigureAwait(false);
 
@@ -44,11 +49,14 @@ namespace Surf.Core
 
         public async Task<bool> RemoveMemberAsync(Member member)
         {
-            int memberCountBeforeFiltering;
+            if (member.Address == _state.GetSelf().Address)
+            {
+                return false;
+            }
 
             using (await _rwLock.WriterLockAsync().ConfigureAwait(false))
             {
-                memberCountBeforeFiltering = _members.Count;
+                var memberCountBeforeFiltering = _members.Count;
                 _members = _members.Where(m => m.Address != member.Address).ToList();
 
                 if (memberCountBeforeFiltering != _members.Count)

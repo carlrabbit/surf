@@ -39,9 +39,9 @@ namespace Surf.Core
         }
 
         private readonly Member _self;
-        public Task<Member> GetSelfAsync()
+        public Member GetSelf()
         {
-            return Task.FromResult(_self);
+            return _self;
         }
 
         private double _lambda;
