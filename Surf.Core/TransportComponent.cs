@@ -37,10 +37,11 @@ namespace Surf.Core
             await _client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.IPv6Loopback, toMember.Address));
         }
 
-        public async Task ListenAsync()
+        public async Task ListenAsync(CancellationToken token)
         {
             while (true)
             {
+                if (token.IsCancellationRequested) return;
                 var r = await _client.ReceiveAsync();
 
                 try

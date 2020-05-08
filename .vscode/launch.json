@@ -10,9 +10,9 @@
       "request": "launch",
       "preLaunchTask": "build",
       // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/surf.kestrel/bin/Debug/netcoreapp3.1/surf.kestrel.dll",
+      "program": "${workspaceFolder}/Surf.TestConsole/bin/Debug/netcoreapp3.1/Surf.TestConsole.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/surf.kestrel",
+      "cwd": "${workspaceFolder}/Surf.TestConsole",
       // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
