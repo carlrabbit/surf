@@ -48,13 +48,12 @@ namespace Surf.Core
         {
             Interlocked.Exchange(ref _currentMemberAlive, 0);
             Interlocked.Exchange(ref _currentPingTimedOut, 0);
-            _currentProtocolPeriod = _state.IncreaseProtocolPeriod();
+            Interlocked.Exchange(ref _currentProtocolPeriod, _state.IncreaseProtocolPeriod());
 
-            var m = await _members.NextRandomMemberAsync().ConfigureAwait(false);
+            var m = await _members.NextPseudoRandomMemberAsync().ConfigureAwait(false);
 
             if (m == null)
             {
-                await Task.Delay(await _state.GetProtocolPeriodAsync());
                 return;
             }
 
@@ -86,7 +85,7 @@ namespace Surf.Core
 
             for (var i = 0; i < 4/*k*/; i++)
             {
-                var randomMember = await _members.NextRandomMemberAsync();
+                var randomMember = await _members.PickRandomMemberAsync();
                 if (randomMember == null) return;
 
                 randomMembersToPingReq.Append(randomMember);
@@ -297,7 +296,7 @@ namespace Surf.Core
                         // TODO: Ignore events basic gossip about ourselves
                         //       In this case without suspicion mechanism, there is no reaction to this as well
                         //       According to swim
-                        if (g.MemberJoined.Member.Port == _state.GetSelf().Address)
+                        if (g.MemberFailed.Member.Port == _state.GetSelf().Address)
                         {
                             continue;
                         }

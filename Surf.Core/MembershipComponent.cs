@@ -97,7 +97,7 @@ namespace Surf.Core
             }
         }
 
-        public async Task<Member> NextRandomMemberAsync()
+        public async Task<Member> NextPseudoRandomMemberAsync() // TODO: Better name
         {
             using (await _rwLock.WriterLockAsync().ConfigureAwait(false))
             {
@@ -113,6 +113,18 @@ namespace Surf.Core
                 }
 
                 return _members[_randomListIndex++];
+            }
+        }
+
+        public async Task<Member> PickRandomMemberAsync()
+        {
+            using (await _rwLock.ReaderLockAsync().ConfigureAwait(false))
+            {
+                if (_members.Count == 0)
+                {
+                    return null;
+                }
+                return _members[_rng.Next(_members.Count)];
             }
         }
     }
