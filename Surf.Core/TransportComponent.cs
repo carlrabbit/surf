@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Surf.Proto;
 
 namespace Surf.Core
 {
@@ -12,21 +13,21 @@ namespace Surf.Core
     /// The transport component is responsible for performing the actual network based communication and routing of incomming messages
     /// to other protocol components
     /// </summary>
-    public class TransportComponent
+    public class TransportComponent : ITransportComponent
     {
-        private readonly ProtocolStateComponent _state;
+        private readonly IProtocolStateComponent _state;
         private readonly UdpClient _client;
 
-        private FailureDetectorComponent? _fdc = null; //TEMP CODE
+        private IFailureDetectorComponent? _fdc = null; //TEMP CODE
 
-        public TransportComponent(ProtocolStateComponent state)
+        public TransportComponent(IProtocolStateComponent state)
         {
             _state = state;
             _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, _state.GetSelf().Port));
         }
 
         //TODO: find better way for callback mechanism
-        public void SetFDC(FailureDetectorComponent fdc)
+        public void RegisterFailureDetectorComponent(IFailureDetectorComponent fdc)
         {
             Interlocked.Exchange(ref _fdc, fdc);
         }

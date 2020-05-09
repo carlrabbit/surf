@@ -10,7 +10,6 @@ using Nito.AsyncEx;
 
 namespace Surf.Core
 {
-
     /// <summary>
     /// The protocol state component manages all protocol specific parameters.
     /// 
@@ -18,7 +17,7 @@ namespace Surf.Core
     /// 
     /// Updating other static parameters is supported as well to allow dynamic configuration updates.
     /// </summary>
-    public class ProtocolStateComponent
+    public class ProtocolStateComponent : IProtocolStateComponent
     {
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
         private readonly MetricComponent _mc;
@@ -96,7 +95,7 @@ namespace Surf.Core
         }
 
         private int _protocolPeriod;
-        public int IncreaseProtocolPeriod()
+        public int IncreaseProtocolPeriodNumber()
         {
             return Interlocked.Increment(ref _protocolPeriod);
             //TODO: handle overflows
@@ -114,7 +113,7 @@ namespace Surf.Core
         }
 
         private int _protocolPeriodDurationMs;
-        public Task<int> GetProtocolPeriodAsync()
+        public Task<int> GetProtocolPeriodNumberAsync()
         {
             return Task.FromResult(_protocolPeriodDurationMs);
         }

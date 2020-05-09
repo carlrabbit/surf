@@ -11,11 +11,11 @@ namespace Surf.Core
     /// 
     /// The membership component manages the actual members of a group and their status. It does not track the current member itself.
     /// </summary>
-    public class MembershipComponent
+    public class MembershipComponent : IMembershipComponent
     {
-        private readonly ProtocolStateComponent _state;
+        private readonly IProtocolStateComponent _state;
 
-        public MembershipComponent(ProtocolStateComponent state)
+        public MembershipComponent(IProtocolStateComponent state)
         {
             _state = state;
         }

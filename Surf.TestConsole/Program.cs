@@ -9,9 +9,9 @@ using Surf.Core;
 
 namespace Surf.TestConsole
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] _)
+        private static void Main(string[] _)
         {
             var rng = new Random();
 

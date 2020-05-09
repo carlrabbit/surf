@@ -7,22 +7,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Nito.AsyncEx;
+using Surf.Proto;
 
 namespace Surf.Core
 {
     /// <summary>
     /// The failure detection component is the main protocol component as all other messages are piggy bagged by it's messages.
     /// </summary>
-    public class FailureDetectorComponent
+    public class FailureDetectorComponent : IFailureDetectorComponent
     {
-        private readonly ProtocolStateComponent _state;
-        private readonly TransportComponent _transport;
-        private readonly MembershipComponent _members;
+        private readonly IProtocolStateComponent _state;
+        private readonly ITransportComponent _transport;
+        private readonly IMembershipComponent _members;
         private readonly DisseminationComponent _gossip;
 
-        public FailureDetectorComponent(ProtocolStateComponent state,
-            TransportComponent transport,
-            MembershipComponent members,
+        public FailureDetectorComponent(IProtocolStateComponent state,
+            ITransportComponent transport,
+            IMembershipComponent members,
             DisseminationComponent gossip)
         {
             _state = state;
@@ -30,7 +31,7 @@ namespace Surf.Core
             _members = members;
             _gossip = gossip;
 
-            _transport.SetFDC(this);
+            _transport.RegisterFailureDetectorComponent(this);
         }
 
         private int _currentProtocolPeriod = -1;
@@ -48,7 +49,7 @@ namespace Surf.Core
         {
             Interlocked.Exchange(ref _currentMemberAlive, 0);
             Interlocked.Exchange(ref _currentPingTimedOut, 0);
-            Interlocked.Exchange(ref _currentProtocolPeriod, _state.IncreaseProtocolPeriod());
+            Interlocked.Exchange(ref _currentProtocolPeriod, _state.IncreaseProtocolPeriodNumber());
 
             var m = await _members.PickRandomMemberForPingAsync().ConfigureAwait(false);
 
@@ -104,7 +105,7 @@ namespace Surf.Core
 
         private async Task EndProtocolPeriodAsync(Member m)
         {
-            await Task.Delay(await _state.GetProtocolPeriodAsync());
+            await Task.Delay(await _state.GetProtocolPeriodNumberAsync());
 
             if (_currentMemberAlive == 0)
             {

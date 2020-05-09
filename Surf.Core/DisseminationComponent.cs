@@ -13,17 +13,15 @@ namespace Surf.Core
     /// 
     /// The component keeps a list of gossip messages and decides how often they are 
     /// piggybacked to other members.
-    /// 
-    /// The number 
     /// </summary>
     public class DisseminationComponent
     {
-        private readonly ProtocolStateComponent _state;
+        private readonly IProtocolStateComponent _state;
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
 
         private List<GossipWrapper> _basicMemberGossip = new List<GossipWrapper>();
         private HashSet<int> _knownGossip = new HashSet<int>();
-        public DisseminationComponent(ProtocolStateComponent state)
+        public DisseminationComponent(IProtocolStateComponent state)
         {
             _state = state;
         }
