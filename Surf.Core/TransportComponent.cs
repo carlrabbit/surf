@@ -14,18 +14,18 @@ namespace Surf.Core
     /// </summary>
     public class TransportComponent
     {
-        private readonly StateAndConfigurationComponent _state;
+        private readonly ProtocolStateComponent _state;
         private readonly UdpClient _client;
 
-        private FailureDetectorComponent _fdc = null; //TEMP CODE
+        private FailureDetectorComponent? _fdc = null; //TEMP CODE
 
-        public TransportComponent(StateAndConfigurationComponent state)
+        public TransportComponent(ProtocolStateComponent state)
         {
             _state = state;
-            _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, _state.GetSelf().Address));
+            _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, _state.GetSelf().Port));
         }
 
-        //TODO: will be register message handler
+        //TODO: find better way for callback mechanism
         public void SetFDC(FailureDetectorComponent fdc)
         {
             Interlocked.Exchange(ref _fdc, fdc);
@@ -34,10 +34,10 @@ namespace Surf.Core
         public async Task SendMessageAsync(Proto.MessageEnvelope msg, Member toMember)
         {
             var data = msg.ToByteArray();
-            await _client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.IPv6Loopback, toMember.Address));
+            await _client.SendAsync(data, data.Length, new IPEndPoint(IPAddress.IPv6Loopback, toMember.Port));
         }
 
-        public async Task ListenAsync(CancellationToken token)
+        public async Task ListenAsync(CancellationToken token = default)
         {
             while (true)
             {
@@ -47,9 +47,10 @@ namespace Surf.Core
                 try
                 {
                     var envelope = Surf.Proto.MessageEnvelope.Parser.ParseFrom(r.Buffer);
-                    var requester = new Surf.Core.Member() { Address = r.RemoteEndPoint.Port };
+                    var requester = new Surf.Core.Member() { Port = r.RemoteEndPoint.Port };
 
-                    await _fdc.HandleMessage(envelope, requester);
+                    // TODO: find better way for callback mechanism
+                    await _fdc!.HandleMessage(envelope, requester);
                 }
                 catch (Google.Protobuf.InvalidProtocolBufferException)
                 {

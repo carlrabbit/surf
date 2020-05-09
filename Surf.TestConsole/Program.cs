@@ -11,9 +11,10 @@ namespace Surf.TestConsole
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main(string[] _)
         {
-            Random rng = new Random();
+            var rng = new Random();
+
             var members = new List<CancellationTokenSource>();
             Console.WriteLine("Starting nodes");
             var seedNodes = new int[] { 6666, 6667, 6668 };
@@ -59,11 +60,11 @@ namespace Surf.TestConsole
             var tokenSource = new CancellationTokenSource();
             var self = new Member()
             {
-                Address = port
+                Port = port
             };
 
             var metricComponent = new MetricComponent();
-            var scC = new StateAndConfigurationComponent(port, metricComponent);
+            var scC = new ProtocolStateComponent(port, metricComponent);
 
             var tc = new TransportComponent(scC);
             var mC = new MembershipComponent(scC);
@@ -80,14 +81,14 @@ namespace Surf.TestConsole
                         Member = new Proto.MemberAddress()
                         {
                             V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = self.Address
+                            Port = self.Port
                         }
                     }
                 });
 
                 if (joinPort.HasValue)
                 {
-                    await mC.AddMemberAsync(new Member() { Address = joinPort.Value });
+                    await mC.AddMemberAsync(new Member() { Port = joinPort.Value });
                 }
 
                 await tc.ListenAsync(tokenSource.Token);
@@ -99,7 +100,7 @@ namespace Surf.TestConsole
                 while (true)
                 {
                     if (tokenSource.IsCancellationRequested) { return; }
-                    Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
+                    Console.WriteLine($"A: {port}: {await mC.GetMemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
                     Console.WriteLine(await metricComponent.Dump());
 
                     await fdc.DoProtocolPeriod();

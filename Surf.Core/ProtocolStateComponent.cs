@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
@@ -11,18 +12,18 @@ namespace Surf.Core
 {
 
     /// <summary>
-    /// The component manages all protocol specific paramters.
+    /// The protocol state component manages all protocol specific parameters.
     /// 
     /// With it dynamic configuration parameters are managed, such TTL parameters or current message round trip times.
     /// 
-    /// Updating other static parameters is supported as well to allow dynamic configuration updates in users of Surf.Core.
+    /// Updating other static parameters is supported as well to allow dynamic configuration updates.
     /// </summary>
-    public class StateAndConfigurationComponent
+    public class ProtocolStateComponent
     {
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
         private readonly MetricComponent _mc;
 
-        public StateAndConfigurationComponent(int port, MetricComponent metricComponent)
+        public ProtocolStateComponent(int port, MetricComponent metricComponent)
         {
             _mc = metricComponent;
 
@@ -32,7 +33,8 @@ namespace Surf.Core
             _protocolPeriodDurationMs = 1000;
             _self = new Member()
             {
-                Address = port
+                Address = IPAddress.IPv6Loopback,
+                Port = port
             };
 
             // init internal defaults

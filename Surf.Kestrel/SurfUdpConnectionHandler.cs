@@ -50,10 +50,11 @@ namespace Surf.Kestrel
         {
             var self = new Member()
             {
-                Address = port
+                Port = port
             };
 
-            var scC = new StateAndConfigurationComponent(port);
+            var meC = new MetricComponent();
+            var scC = new ProtocolStateComponent(port, meC);
             var tc = new TransportComponent(scC);
             var mC = new MembershipComponent(scC);
             var gl = new DisseminationComponent(scC);
@@ -69,14 +70,14 @@ namespace Surf.Kestrel
                         Member = new Proto.MemberAddress()
                         {
                             V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = self.Address
+                            Port = self.Port
                         }
                     }
                 });
 
                 if (joinPort.HasValue)
                 {
-                    await mC.AddMemberAsync(new Member() { Address = joinPort.Value });
+                    await mC.AddMemberAsync(new Member() { Port = joinPort.Value });
                 }
 
                 await tc.ListenAsync();
@@ -87,7 +88,7 @@ namespace Surf.Kestrel
             {
                 while (true)
                 {
-                    Console.WriteLine($"A: {port}: {await mC.MemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
+                    Console.WriteLine($"A: {port}: {await mC.GetMemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
 
                     await fdc.DoProtocolPeriod();
                 }

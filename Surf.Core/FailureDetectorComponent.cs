@@ -15,12 +15,12 @@ namespace Surf.Core
     /// </summary>
     public class FailureDetectorComponent
     {
-        private readonly StateAndConfigurationComponent _state;
+        private readonly ProtocolStateComponent _state;
         private readonly TransportComponent _transport;
         private readonly MembershipComponent _members;
         private readonly DisseminationComponent _gossip;
 
-        public FailureDetectorComponent(StateAndConfigurationComponent state,
+        public FailureDetectorComponent(ProtocolStateComponent state,
             TransportComponent transport,
             MembershipComponent members,
             DisseminationComponent gossip)
@@ -50,7 +50,7 @@ namespace Surf.Core
             Interlocked.Exchange(ref _currentPingTimedOut, 0);
             Interlocked.Exchange(ref _currentProtocolPeriod, _state.IncreaseProtocolPeriod());
 
-            var m = await _members.NextPseudoRandomMemberAsync().ConfigureAwait(false);
+            var m = await _members.PickRandomMemberForPingAsync().ConfigureAwait(false);
 
             if (m == null)
             {
@@ -85,7 +85,7 @@ namespace Surf.Core
 
             for (var i = 0; i < 4/*k*/; i++)
             {
-                var randomMember = await _members.PickRandomMemberAsync();
+                var randomMember = await _members.PickRandomMemberPingReqAsync();
                 if (randomMember == null) return;
 
                 randomMembersToPingReq.Append(randomMember);
@@ -119,7 +119,7 @@ namespace Surf.Core
                             Member = new Proto.MemberAddress()
                             {
                                 V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                                Port = m.Address
+                                Port = m.Port
                             }
                         }
                     }).ConfigureAwait(false);
@@ -165,7 +165,7 @@ namespace Surf.Core
             }
         }
 
-        private async Task OnAck(Proto.Ack ack, Member fromMember)
+        private async Task OnAck(Proto.Ack ack, Member _)
         {
             // check if ack is actually from the current protocol period
             if (ack.LocalTime != _currentProtocolPeriod)
@@ -185,10 +185,10 @@ namespace Surf.Core
             await _state.UpdateAverageRoundTripTimeAsync(elapsed);
         }
 
-        private async Task OnAckReq(Proto.AckReq ackReq, Member fromMember)
+        private async Task OnAckReq(Proto.AckReq ackReq, Member _)
         {
             //if ping request is addressed to the current member node, mark _current ping target as alive
-            if (ackReq.ToMember.Port == (_state.GetSelf()).Address)
+            if (ackReq.ToMember.Port == (_state.GetSelf()).Port)
             {
                 //if local time matches
                 if (ackReq.LocalTime != _currentProtocolPeriod)
@@ -210,7 +210,7 @@ namespace Surf.Core
         private async Task OnPingReq(Proto.PingReq pr, Member fromMember)
         {
             //if ping request is addressed to the current member node, send a ackReq
-            if (pr.ToMember.Port == (_state.GetSelf()).Address)
+            if (pr.ToMember.Port == (_state.GetSelf()).Port)
             {
                 await _transport.SendMessageAsync(new Proto.MessageEnvelope()
                 {
@@ -257,7 +257,7 @@ namespace Surf.Core
                         Member = new Proto.MemberAddress()
                         {
                             V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = fromMember.Address
+                            Port = fromMember.Port
                         }
                     }
                 });
@@ -270,14 +270,14 @@ namespace Surf.Core
                 {
                     case Proto.GossipEnvelope.MessageTypeOneofCase.MemberJoined:
                         // TODO: Ignore events basic gossip about ourselves
-                        if (g.MemberJoined.Member.Port == _state.GetSelf().Address)
+                        if (g.MemberJoined.Member.Port == _state.GetSelf().Port)
                         {
                             continue;
                         }
 
                         var isNewMember = await _members.AddMemberAsync(new Member()
                         {
-                            Address = (int)g.MemberJoined.Member.Port
+                            Port = (int)g.MemberJoined.Member.Port
                         });
 
                         if (isNewMember)
@@ -296,14 +296,14 @@ namespace Surf.Core
                         // TODO: Ignore events basic gossip about ourselves
                         //       In this case without suspicion mechanism, there is no reaction to this as well
                         //       According to swim
-                        if (g.MemberFailed.Member.Port == _state.GetSelf().Address)
+                        if (g.MemberFailed.Member.Port == _state.GetSelf().Port)
                         {
                             continue;
                         }
 
                         var memberWasRemoved = await _members.RemoveMemberAsync(new Member()
                         {
-                            Address = (int)g.MemberFailed.Member.Port
+                            Port = (int)g.MemberFailed.Member.Port
                         });
 
                         if (memberWasRemoved)

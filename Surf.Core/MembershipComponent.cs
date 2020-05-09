@@ -8,12 +8,14 @@ namespace Surf.Core
 {
     /// <summary>
     /// TODO: MembershipComponent will react to basic chatter, e.g. instead of AddMemberAsync -> OnMemberJoined 
+    /// 
+    /// The membership component manages the actual members of a group and their status. It does not track the current member itself.
     /// </summary>
     public class MembershipComponent
     {
-        private readonly StateAndConfigurationComponent _state;
+        private readonly ProtocolStateComponent _state;
 
-        public MembershipComponent(StateAndConfigurationComponent state)
+        public MembershipComponent(ProtocolStateComponent state)
         {
             _state = state;
         }
@@ -22,16 +24,21 @@ namespace Surf.Core
         private List<Member> _members = new List<Member>();
         private int _randomListIndex = 0;
         private readonly Random _rng = new Random();
+
+        /// <summary>
+        /// Adds a new member to the member list. Returns true if the member was not listed before
+        /// and false if the member was already listed.
+        /// </summary>
         public async Task<bool> AddMemberAsync(Member member)
         {
-            if (member.Address == _state.GetSelf().Address)
+            if (member.Port == _state.GetSelf().Port)
             {
                 return false;
             }
 
             using (await _rwLock.WriterLockAsync().ConfigureAwait(false))
             {
-                if (!_members.Any(e => e.Address == member.Address))
+                if (!_members.Any(e => e.Port == member.Port))
                 {
                     //insert new member at a random position
                     _members.Insert(_rng.Next(0, _members.Count), member);
@@ -47,9 +54,13 @@ namespace Surf.Core
             }
         }
 
+        /// <summary>
+        /// Removes a member of the member list. Returns true if the member was listed and removed.
+        /// If the member was not listed anymore, returns false.
+        /// </summary>
         public async Task<bool> RemoveMemberAsync(Member member)
         {
-            if (member.Address == _state.GetSelf().Address)
+            if (member.Port == _state.GetSelf().Port)
             {
                 return false;
             }
@@ -57,7 +68,7 @@ namespace Surf.Core
             using (await _rwLock.WriterLockAsync().ConfigureAwait(false))
             {
                 var memberCountBeforeFiltering = _members.Count;
-                _members = _members.Where(m => m.Address != member.Address).ToList();
+                _members = _members.Where(m => m.Port != member.Port).ToList();
 
                 if (memberCountBeforeFiltering != _members.Count)
                 {
@@ -89,7 +100,10 @@ namespace Surf.Core
             }
         }
 
-        public async Task<int> MemberCountAsync()
+        /// <summary>
+        /// Returns the current active members.
+        /// </summary>
+        public async Task<int> GetMemberCountAsync()
         {
             using (await _rwLock.ReaderLockAsync().ConfigureAwait(false))
             {
@@ -97,7 +111,11 @@ namespace Surf.Core
             }
         }
 
-        public async Task<Member> NextPseudoRandomMemberAsync() // TODO: Better name
+        /// <summary>
+        /// Picks a random member from the member list and guarantees that each member will be
+        /// picked at least once during 2*N calls where N is the number of members currently listed.
+        /// </summary>
+        public async Task<Member?> PickRandomMemberForPingAsync()
         {
             using (await _rwLock.WriterLockAsync().ConfigureAwait(false))
             {
@@ -116,7 +134,11 @@ namespace Surf.Core
             }
         }
 
-        public async Task<Member> PickRandomMemberAsync()
+        /// <summary>
+        /// Picks a completely random member from the member list. It is not
+        /// guaranteed that all members will be chosen at least once.
+        /// </summary>
+        public async Task<Member?> PickRandomMemberPingReqAsync()
         {
             using (await _rwLock.ReaderLockAsync().ConfigureAwait(false))
             {
