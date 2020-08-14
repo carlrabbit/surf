@@ -20,23 +20,26 @@ namespace Surf.Core
         private readonly ITransportComponent _transport;
         private readonly IMembershipComponent _members;
         private readonly DisseminationComponent _gossip;
+        private readonly ITimeProvider _tp;
 
         public FailureDetectorComponent(IProtocolStateComponent state,
             ITransportComponent transport,
             IMembershipComponent members,
-            DisseminationComponent gossip)
+            DisseminationComponent gossip,
+            ITimeProvider tp)
         {
             _state = state;
             _transport = transport;
             _members = members;
             _gossip = gossip;
+            _tp = tp;
 
             _transport.RegisterFailureDetectorComponent(this);
         }
 
         private int _currentProtocolPeriod = -1;
 
-        private readonly Stopwatch _currentSW = new Stopwatch();
+        private object? _currentSW = null;
 
         private int _currentMemberAlive;
         private int _currentPingTimedOut;
@@ -59,7 +62,7 @@ namespace Surf.Core
             }
 
             // TODO: Start before or after? 
-            _currentSW.Restart();
+            _currentSW = _tp.NowForDiff();
 
             await Task.WhenAll(
                SendPingAsync(m),
@@ -71,7 +74,7 @@ namespace Surf.Core
 
         private async Task SuspectMemberToBeDead(Member m)//, CancellationToken ct)
         {
-            await Task.Delay(await _state.GetCurrentPingTimeoutAsync());
+            await _tp.TaskDelay(await _state.GetCurrentPingTimeoutAsync());
 
             if (_currentMemberAlive == 1)
             {
@@ -105,7 +108,7 @@ namespace Surf.Core
 
         private async Task EndProtocolPeriodAsync(Member m)
         {
-            await Task.Delay(await _state.GetProtocolPeriodNumberAsync());
+            await _tp.TaskDelay(await _state.GetProtocolPeriodNumberAsync());
 
             if (_currentMemberAlive == 0)
             {
@@ -117,11 +120,7 @@ namespace Surf.Core
                     {
                         MemberFailed = new Proto.MemberFailedForMe()
                         {
-                            Member = new Proto.MemberAddress()
-                            {
-                                V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                                Port = m.Port
-                            }
+                            Member = Member.ToProto(m)
                         }
                     }).ConfigureAwait(false);
                 }
@@ -180,8 +179,14 @@ namespace Surf.Core
             }
 
             Interlocked.Exchange(ref _currentMemberAlive, 1);
-            _currentSW.Stop();
-            var elapsed = _currentSW.ElapsedMilliseconds;
+
+            if (_currentSW is null)
+            {
+                throw new Exception("_currentSW should be initialized");
+            }
+
+            var elapsed = _tp.Diff(_currentSW);
+
             // Console.WriteLine(elapsed);
             await _state.UpdateAverageRoundTripTimeAsync(elapsed);
         }
@@ -255,11 +260,7 @@ namespace Surf.Core
                 {
                     MemberJoined = new Proto.MemberJoinedMe()
                     {
-                        Member = new Proto.MemberAddress()
-                        {
-                            V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = fromMember.Port
-                        }
+                        Member = Member.ToProto(fromMember)
                     }
                 });
             }
@@ -276,10 +277,7 @@ namespace Surf.Core
                             continue;
                         }
 
-                        var isNewMember = await _members.AddMemberAsync(new Member()
-                        {
-                            Port = (int)g.MemberJoined.Member.Port
-                        });
+                        var isNewMember = await _members.AddMemberAsync(Member.FromProto(g.MemberJoined.Member));
 
                         if (isNewMember)
                         {
@@ -302,10 +300,7 @@ namespace Surf.Core
                             continue;
                         }
 
-                        var memberWasRemoved = await _members.RemoveMemberAsync(new Member()
-                        {
-                            Port = (int)g.MemberFailed.Member.Port
-                        });
+                        var memberWasRemoved = await _members.RemoveMemberAsync(Member.FromProto(g.MemberFailed.Member));
 
                         if (memberWasRemoved)
                         {

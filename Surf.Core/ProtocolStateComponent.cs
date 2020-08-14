@@ -20,21 +20,17 @@ namespace Surf.Core
     public class ProtocolStateComponent : IProtocolStateComponent
     {
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
-        private readonly MetricComponent _mc;
+        private readonly PrometheusMetricComponent _mc;
 
-        public ProtocolStateComponent(int port, MetricComponent metricComponent)
+        public ProtocolStateComponent(SurfConfiguration cfg, PrometheusMetricComponent metricComponent)
         {
             _mc = metricComponent;
 
-            //TODO: add cfg class
-            _lambda = 3.0;
-            _pingTimeout = 100;
-            _protocolPeriodDurationMs = 1000;
-            _self = new Member()
-            {
-                Address = IPAddress.IPv6Loopback,
-                Port = port
-            };
+            _lambda = cfg.Lambda;
+            _pingTimeout = cfg.PingTimeoutInMilliseconds;
+            _protocolPeriodDurationMs = cfg.ProtocolPeriodDurationInMilliseconds;
+
+            _self = new Member(IPAddress.Parse(cfg.BindAddress), cfg.Port ?? 6060);
 
             // init internal defaults
             _clt = 0;
@@ -54,6 +50,9 @@ namespace Surf.Core
         {
             using (await _rwLock.ReaderLockAsync())
             {
+                // Ensure gossip time has a value that does not 
+                // lead to premature rejection in the dissemination component
+                // TODO: check against other implementations
                 return Math.Max(_lambda, _clt);
             }
         }
@@ -83,7 +82,7 @@ namespace Surf.Core
                 }
                 _meanRoundTripTime = _measures.Average();
             }
-            _mc.UpdateAverageTurnaroundTime(_meanRoundTripTime);
+            _mc.TrackMeanRoundtripTime(_meanRoundTripTime);
         }
 
         public async Task<double> GetAverageRoundTripTimeAsync()

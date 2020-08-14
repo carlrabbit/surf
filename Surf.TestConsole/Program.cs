@@ -24,7 +24,6 @@ namespace Surf.TestConsole
                 StartMember(seedNodes[i], i == 0 ? (int?)null : seedNodes[i - 1]);
             }
 
-
             var nextPort = seedNodes.Max() + 1;
             for (var i = 0; i < 3; i++, nextPort++)
             {
@@ -48,28 +47,38 @@ namespace Surf.TestConsole
                         members.Add(StartMember(nextPort, joinPort: seedNodes[nextPort % seedNodes.Length]));
                         nextPort++;
                         break;
+                    case ConsoleKey.I: //Info
+
+                        break;
                     default: break;
                 }
             }
             Console.WriteLine();
-            Console.WriteLine("exti");
+            Console.WriteLine("exit");
         }
 
         public static CancellationTokenSource StartMember(int port, int? joinPort)
         {
             var tokenSource = new CancellationTokenSource();
-            var self = new Member()
+
+            var cfg = new SurfConfiguration()
             {
-                Port = port
+                BindAddress = IPAddress.IPv6Loopback.ToString(),
+                Port = port,
+                PingTimeoutInMilliseconds = 40,
+                ProtocolPeriodDurationInMilliseconds = 150
             };
 
-            var metricComponent = new MetricComponent();
-            var scC = new ProtocolStateComponent(port, metricComponent);
+            var tp = new TimeProvider();
+            var metricComponent = new PrometheusMetricComponent();
+            var scC = new ProtocolStateComponent(cfg, metricComponent);
 
-            var tc = new TransportComponent(scC);
+            var tc = new LocalMachineTransportDummyComponent(scC, tp);
+            // var tc = new UdpTransportComponent(scC);
+
             var mC = new MembershipComponent(scC);
             var gl = new DisseminationComponent(scC);
-            var fdc = new FailureDetectorComponent(scC, tc, mC, gl);
+            var fdc = new FailureDetectorComponent(scC, tc, mC, gl, tp);
 
             // listen for events
             var t1 = Task.Run(async () =>
@@ -78,17 +87,13 @@ namespace Surf.TestConsole
                 {
                     MemberJoined = new Proto.MemberJoinedMe()
                     {
-                        Member = new Proto.MemberAddress()
-                        {
-                            V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = self.Port
-                        }
+                        Member = Member.ToProto(scC.GetSelf())
                     }
                 });
 
                 if (joinPort.HasValue)
                 {
-                    await mC.AddMemberAsync(new Member() { Port = joinPort.Value });
+                    await mC.AddMemberAsync(new Member(IPAddress.IPv6Loopback, joinPort.Value));
                 }
 
                 await tc.ListenAsync(tokenSource.Token);
@@ -100,8 +105,8 @@ namespace Surf.TestConsole
                 while (true)
                 {
                     if (tokenSource.IsCancellationRequested) { return; }
-                    Console.WriteLine($"A: {port}: {await mC.GetMemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
-                    Console.WriteLine(await metricComponent.Dump());
+                    Console.WriteLine($"A: {port}: {await mC.GetMemberCountAsync()}/{await gl.StackCount()}");
+                    // Console.WriteLine(await metricComponent.Dump());
 
                     await fdc.DoProtocolPeriod();
                 }

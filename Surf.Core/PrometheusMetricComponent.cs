@@ -11,7 +11,7 @@ namespace Surf.Core
     /// <summary>
     /// The metric component handles collection of surf specific metrics.
     /// </summary>
-    public class MetricComponent
+    public class PrometheusMetricComponent : IMetricComponent
     {
         private readonly Summary _averageTurnaroundTime =
             Metrics.CreateSummary("surf_average_turnaround_time_seconds",
@@ -26,19 +26,14 @@ namespace Surf.Core
                     }
                 });
 
-        public MetricComponent()
+        public PrometheusMetricComponent()
         {
             Metrics.SuppressDefaultMetrics();
         }
 
-        public void UpdateAverageTurnaroundTime(double milliSeconds)
+        public void TrackMeanRoundtripTime(double milliSeconds)
         {
             _averageTurnaroundTime.Observe(milliSeconds / 1000);
-        }
-
-        public void UpdateProtocolPeriodTime()
-        {
-
         }
 
         public async Task<string> Dump()

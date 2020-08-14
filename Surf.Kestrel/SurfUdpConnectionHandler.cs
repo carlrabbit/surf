@@ -48,51 +48,47 @@ namespace Surf.Kestrel
 
         public void StartMember(int port, int? joinPort)
         {
-            var self = new Member()
-            {
-                Port = port
-            };
+            // var self = new Member()
+            // {
+            //     Port = port
+            // };
 
-            var meC = new MetricComponent();
-            var scC = new ProtocolStateComponent(port, meC);
-            var tc = new TransportComponent(scC);
-            var mC = new MembershipComponent(scC);
-            var gl = new DisseminationComponent(scC);
-            var fdc = new FailureDetectorComponent(scC, tc, mC, gl);
+            // var meC = new PrometheusMetricComponent();
+            // var scC = new ProtocolStateComponent(port, meC);
+            // var tc = new UdpTransportComponent(scC);
+            // var mC = new MembershipComponent(scC);
+            // var gl = new DisseminationComponent(scC);
+            // var fdc = new FailureDetectorComponent(scC, tc, mC, gl);
 
-            // listen for events
-            Task.Run(async () =>
-            {
-                await gl.AddAsync(new Proto.GossipEnvelope()
-                {
-                    MemberJoined = new Proto.MemberJoinedMe()
-                    {
-                        Member = new Proto.MemberAddress()
-                        {
-                            V6 = ByteString.CopyFrom(IPAddress.Loopback.GetAddressBytes()),
-                            Port = self.Port
-                        }
-                    }
-                });
+            // // listen for events
+            // Task.Run(async () =>
+            // {
+            //     await gl.AddAsync(new Proto.GossipEnvelope()
+            //     {
+            //         MemberJoined = new Proto.MemberJoinedMe()
+            //         {
+            //             Member = Member.ToProto(self)
+            //         }
+            //     });
 
-                if (joinPort.HasValue)
-                {
-                    await mC.AddMemberAsync(new Member() { Port = joinPort.Value });
-                }
+            //     // if (joinPort.HasValue)
+            //     // {
+            //     //     await mC.AddMemberAsync(new Member() { Port = joinPort.Value });
+            //     // }
 
-                await tc.ListenAsync();
-            });
+            //     await tc.ListenAsync();
+            // });
 
-            // start error component
-            Task.Run(async () =>
-            {
-                while (true)
-                {
-                    Console.WriteLine($"A: {port}: {await mC.GetMemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
+            // // start error component
+            // Task.Run(async () =>
+            // {
+            //     while (true)
+            //     {
+            //         Console.WriteLine($"A: {port}: {await mC.GetMemberCountAsync()}/{await gl.StackCount()}");// + JsonSerializer.Serialize(l));
 
-                    await fdc.DoProtocolPeriod();
-                }
-            });
+            //         await fdc.DoProtocolPeriod();
+            //     }
+            // });
         }
     }
 

@@ -13,14 +13,14 @@ namespace Surf.Core
     /// The transport component is responsible for performing the actual network based communication and routing of incomming messages
     /// to other protocol components
     /// </summary>
-    public class TransportComponent : ITransportComponent
+    public class UdpTransportComponent : ITransportComponent
     {
         private readonly IProtocolStateComponent _state;
         private readonly UdpClient _client;
 
         private IFailureDetectorComponent? _fdc = null; //TEMP CODE
 
-        public TransportComponent(IProtocolStateComponent state)
+        public UdpTransportComponent(IProtocolStateComponent state)
         {
             _state = state;
             _client = new UdpClient(new IPEndPoint(IPAddress.IPv6Loopback, _state.GetSelf().Port));
@@ -48,7 +48,7 @@ namespace Surf.Core
                 try
                 {
                     var envelope = Surf.Proto.MessageEnvelope.Parser.ParseFrom(r.Buffer);
-                    var requester = new Surf.Core.Member() { Port = r.RemoteEndPoint.Port };
+                    var requester = new Member(r.RemoteEndPoint.Address, r.RemoteEndPoint.Port);
 
                     // TODO: find better way for callback mechanism
                     await _fdc!.HandleMessage(envelope, requester);

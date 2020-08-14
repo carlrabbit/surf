@@ -6,6 +6,11 @@ namespace Surf.Core
 {
     public class Member
     {
+        public Member(IPAddress address, int port)
+        {
+            Port = port;
+            Address = address;
+        }
         /// <summary>
         /// An optional friendly name of a member.
         /// </summary>
@@ -14,7 +19,7 @@ namespace Surf.Core
         /// <summary>
         /// The IP address of a member.
         /// </summary>
-        public IPAddress Address { get; set; } = IPAddress.None;
+        public IPAddress Address { get; set; }
 
         /// <summary>
         /// The port of the surf protocol. Port sharing is not supported.
@@ -27,11 +32,9 @@ namespace Surf.Core
                 ? new IPAddress(m.V6.ToByteArray())
                 : new IPAddress(m.V4);
 
-            return new Member()
+            return new Member(ipAddress, m.Port)
             {
-                FriendlyName = "",
-                Address = ipAddress,
-                Port = m.Port
+                FriendlyName = ""
             };
         }
 

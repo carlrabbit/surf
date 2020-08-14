@@ -43,6 +43,8 @@ namespace Surf.Core
                     //insert new member at a random position
                     _members.Insert(_rng.Next(0, _members.Count), member);
 
+                    // TODO: increase _randomListIndex if new member was added before it
+
                     await _state.UpdateMemberCountAsync(_members.Count).ConfigureAwait(false);
 
                     return true;
@@ -72,7 +74,8 @@ namespace Surf.Core
 
                 if (memberCountBeforeFiltering != _members.Count)
                 {
-                    _randomListIndex--;
+                    // TODO: only decrement if member was taken from before the _randomListIndex
+                    _randomListIndex = Math.Max(0, _randomListIndex - 1);
                     return true;
                 }
                 else
