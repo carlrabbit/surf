@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
         <ProjectReference Include="..\Surf.Core\Surf.Core.csproj" />
+        <ProjectReference Include="..\Surf.Sim\Surf.Sim.csproj" />
     </ItemGroup>
     <PropertyGroup>
         <OutputType>Exe</OutputType>

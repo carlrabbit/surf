@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Surf.Proto;
 using Nito.AsyncEx;
+using Nito.Collections;
 using System;
 using System.Threading.Channels;
 
@@ -19,14 +20,15 @@ namespace Surf.Core
     /// TODO: enhance to simulate timeouts and network failures
     /// TODO: enhance to simulate network partitions
     /// </summary>
-    public class LocalMachineTransportDummyComponent : ITransportComponent
+    public class LocalMachineTransportDummyComponent : IDatagramTransportComponent
     {
         private static readonly AsyncReaderWriterLock s_rwLock = new AsyncReaderWriterLock();
         private static readonly Dictionary<string, LocalMachineTransportDummyComponent> s_memberLookup = new Dictionary<string, LocalMachineTransportDummyComponent>();
 
         private readonly IProtocolStateComponent _state;
         private readonly ITimeProvider _tp;
-        private IFailureDetectorComponent? _fdc = null; //TEMP CODE
+
+        private Func<MessageEnvelope, Member, CancellationToken, Task>? _handler = null;
 
         public LocalMachineTransportDummyComponent(IProtocolStateComponent state, ITimeProvider tp)
         {
@@ -34,61 +36,67 @@ namespace Surf.Core
             _tp = tp;
         }
 
-        public void RegisterFailureDetectorComponent(IFailureDetectorComponent fdc)
-        {
-            Interlocked.Exchange(ref _fdc, fdc);
-        }
-
         public async Task SendMessageAsync(Proto.MessageEnvelope msg, Member toMember)
         {
             // Simulate some network delay
-            await _tp.TaskDelay(10);
-
-            LocalMachineTransportDummyComponent? target = null;
-
-            using (await s_rwLock.ReaderLockAsync())
+            // await _tp.TaskDelay(10);
+            await _tp.ExecuteAfter(10, default, async (_) =>
             {
-                if (s_memberLookup.ContainsKey(CalculateLookup(toMember)))
-                {
-                    target = s_memberLookup[CalculateLookup(toMember)];
-                }
-                else
-                {
-                    return;
-                }
-            }
+                LocalMachineTransportDummyComponent? target = null;
 
-            // Pretend udp behaviour, so no error occurs if target is not reachable
-            await target.ReceiveMessage(msg, _state.GetSelf());
+                using (await s_rwLock.ReaderLockAsync())
+                {
+                    if (s_memberLookup.ContainsKey(CalculateLookupHash(toMember)))
+                    {
+                        target = s_memberLookup[CalculateLookupHash(toMember)];
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                // Pretend udp behaviour, so no error occurs if target is not reachable
+                await target.ReceiveMessage(msg, _state.GetSelf());
+            });
         }
 
         private async Task ReceiveMessage(MessageEnvelope msg, Member fromMember)
         {
-            await _fdc!.HandleMessage(msg, fromMember);
+            await _handler(msg, fromMember, CancellationToken.None);
         }
 
-        public async Task ListenAsync(CancellationToken token = default)
+        public async Task ListenAsync(Func<MessageEnvelope, Member, CancellationToken, Task> handler, CancellationToken token = default)
         {
+
+            var old = Interlocked.Exchange(ref _handler, handler);
+            if (old != null)
+            {
+                throw new Exception("Cannot start two listeners.");
+            }
+
             using (await s_rwLock.WriterLockAsync())
             {
-                s_memberLookup.Add(CalculateLookup(_state.GetSelf()), this);
+                s_memberLookup.Add(CalculateLookupHash(_state.GetSelf()), this);
             }
 
-            while (true)
+            try
             {
-                if (token.IsCancellationRequested)
-                {
-                    using (await s_rwLock.WriterLockAsync())
-                    {
-                        s_memberLookup.Remove(CalculateLookup(_state.GetSelf()));
-                    }
-                    return;
-                }
-                await _tp.TaskDelay(1000);
+                // Sleep until token is canceled
+                await new CancellationTokenTaskSource<object>(token).Task;
             }
+            catch (TaskCanceledException) { }
+            finally
+            {
+                using (await s_rwLock.WriterLockAsync())
+                {
+                    s_memberLookup.Remove(CalculateLookupHash(_state.GetSelf()));
+                }
+            }
+
         }
 
-        private static string CalculateLookup(Member member)
+        private static string CalculateLookupHash(Member member)
         {
             return $"{member.Address}:{member.Port}";
         }

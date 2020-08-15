@@ -17,13 +17,13 @@ namespace Surf.Core
     public class FailureDetectorComponent : IFailureDetectorComponent
     {
         private readonly IProtocolStateComponent _state;
-        private readonly ITransportComponent _transport;
+        private readonly IDatagramTransportComponent _transport;
         private readonly IMembershipComponent _members;
         private readonly DisseminationComponent _gossip;
         private readonly ITimeProvider _tp;
 
         public FailureDetectorComponent(IProtocolStateComponent state,
-            ITransportComponent transport,
+            IDatagramTransportComponent transport,
             IMembershipComponent members,
             DisseminationComponent gossip,
             ITimeProvider tp)
@@ -33,8 +33,6 @@ namespace Surf.Core
             _members = members;
             _gossip = gossip;
             _tp = tp;
-
-            _transport.RegisterFailureDetectorComponent(this);
         }
 
         private int _currentProtocolPeriod = -1;
@@ -65,17 +63,17 @@ namespace Surf.Core
             _currentSW = _tp.NowForDiff();
 
             await Task.WhenAll(
-               SendPingAsync(m),
-               SuspectMemberToBeDead(m),
-               EndProtocolPeriodAsync(m)
-           );
+                SendPingAsync(m),
+                _tp.ExecuteAfter(await _state.GetCurrentPingTimeoutAsync(), default,
+                    (_) => SuspectMemberToBeDead(m)),
+                _tp.ExecuteAfter(await _state.GetProtocolPeriodNumberAsync(), default,
+                    (_) => EndProtocolPeriodAsync(m))
+            );
 
         }
 
         private async Task SuspectMemberToBeDead(Member m)//, CancellationToken ct)
         {
-            await _tp.TaskDelay(await _state.GetCurrentPingTimeoutAsync());
-
             if (_currentMemberAlive == 1)
             {
                 return;
@@ -108,8 +106,6 @@ namespace Surf.Core
 
         private async Task EndProtocolPeriodAsync(Member m)
         {
-            await _tp.TaskDelay(await _state.GetProtocolPeriodNumberAsync());
-
             if (_currentMemberAlive == 0)
             {
                 var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);

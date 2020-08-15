@@ -32,10 +32,6 @@ namespace Surf.Core.Bench
     class Program
     {
         static void Main(string[] args) => BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-        //         static void Main(string[] args)
-        //         {
-        // static void Main(string[] args) => BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-        //             Console.WriteLine("Hello World!");
-        //         }
+
     }
 }

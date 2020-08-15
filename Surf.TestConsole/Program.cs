@@ -96,7 +96,7 @@ namespace Surf.TestConsole
                     await mC.AddMemberAsync(new Member(IPAddress.IPv6Loopback, joinPort.Value));
                 }
 
-                await tc.ListenAsync(tokenSource.Token);
+                await tc.ListenAsync((msg, m, _) => fdc.HandleMessage(msg, m), tokenSource.Token);
             }, tokenSource.Token);
 
             // start error component

@@ -20,9 +20,9 @@ namespace Surf.Core
     public class ProtocolStateComponent : IProtocolStateComponent
     {
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
-        private readonly PrometheusMetricComponent _mc;
+        private readonly IMetricComponent _mc;
 
-        public ProtocolStateComponent(SurfConfiguration cfg, PrometheusMetricComponent metricComponent)
+        public ProtocolStateComponent(SurfConfiguration cfg, IMetricComponent metricComponent)
         {
             _mc = metricComponent;
 

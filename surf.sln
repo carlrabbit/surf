@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Surf.Core.Test", "Surf.Core
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Surf.TestConsole", "Surf.TestConsole\Surf.TestConsole.csproj", "{D72A74AE-AB5E-492E-BE43-8C8800C5D166}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Surf.Sim", "Surf.Sim\Surf.Sim.csproj", "{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,5 +88,17 @@ Global
 		{D72A74AE-AB5E-492E-BE43-8C8800C5D166}.Release|x64.Build.0 = Release|Any CPU
 		{D72A74AE-AB5E-492E-BE43-8C8800C5D166}.Release|x86.ActiveCfg = Release|Any CPU
 		{D72A74AE-AB5E-492E-BE43-8C8800C5D166}.Release|x86.Build.0 = Release|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Debug|x64.Build.0 = Debug|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Debug|x86.Build.0 = Debug|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Release|x64.ActiveCfg = Release|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Release|x64.Build.0 = Release|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Release|x86.ActiveCfg = Release|Any CPU
+		{7CF67837-71DF-4C5E-9AB5-10A5E11D6BB4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

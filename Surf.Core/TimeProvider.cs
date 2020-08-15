@@ -1,6 +1,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Surf.Core
@@ -33,5 +34,18 @@ namespace Surf.Core
         {
             return Task.Delay(milliseconds);
         }
+
+        public async Task ExecuteAfter(int milliseconds, CancellationToken ct, Func<CancellationToken, Task> action)
+        {
+            await Task.Delay(milliseconds, ct).ConfigureAwait(false);
+            await action(ct);
+        }
+
+        public async Task ExecuteAndWait(int milliseconds, CancellationToken ct, Func<CancellationToken, Task> action)
+        {
+            await action(ct).ConfigureAwait(false);
+            await Task.Delay(milliseconds, ct).ConfigureAwait(false);
+        }
+
     }
 }

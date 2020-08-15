@@ -1,5 +1,6 @@
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Surf.Core
@@ -15,6 +16,14 @@ namespace Surf.Core
 
         long Diff(object now);
 
-        Task TaskDelay(int milliseconds);
+        /// <summary>
+        /// Waits for x milliseconds and executes action aftwerwards
+        /// </summary>
+        Task ExecuteAfter(int milliseconds, CancellationToken ct, Func<CancellationToken, Task> action);
+
+        /// <summary>
+        /// Executes the async action and waits for x milliseconds
+        /// </summary>
+        Task ExecuteAndWait(int milliseconds, CancellationToken ct, Func<CancellationToken, Task> action);
     }
 }
