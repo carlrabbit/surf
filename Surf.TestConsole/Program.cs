@@ -17,7 +17,7 @@ namespace Surf.TestConsole
 
             var members = new List<CancellationTokenSource>();
             Console.WriteLine("Starting nodes");
-            var seedNodes = new int[] { 6666, 6667, 6668 };
+            var seedNodes = new int[] { 6666, };
 
             for (var i = 0; i < seedNodes.Length; i++)
             {
@@ -25,32 +25,39 @@ namespace Surf.TestConsole
             }
 
             var nextPort = seedNodes.Max() + 1;
-            for (var i = 0; i < 3; i++, nextPort++)
+            for (var i = 0; i < 2; i++, nextPort++)
             {
                 members.Add(StartMember(nextPort, joinPort: seedNodes[nextPort % seedNodes.Length]));
             }
-
+            // for (int ms = 0; ms <= 10000000; ms += 1)
+            // {
+            //     Surf.Sim.TimeComponent.IterateAll(50, CancellationToken.None).Wait();
+            // }
             var stop = false;
             while (!stop)
             {
-                switch (Console.ReadKey().Key)
+                Surf.Sim.TimeComponent.IterateAll(50, CancellationToken.None).Wait();
+                if (Console.KeyAvailable)
                 {
-                    case ConsoleKey.Q:
-                        stop = true;
-                        break;
-                    case ConsoleKey.F:
-                        var index = rng.Next(members.Count);
-                        members[index].Cancel();
-                        members.RemoveAt(index);
-                        break;
-                    case ConsoleKey.N:
-                        members.Add(StartMember(nextPort, joinPort: seedNodes[nextPort % seedNodes.Length]));
-                        nextPort++;
-                        break;
-                    case ConsoleKey.I: //Info
+                    switch (Console.ReadKey().Key)
+                    {
+                        case ConsoleKey.Q:
+                            stop = true;
+                            break;
+                        case ConsoleKey.F:
+                            var index = rng.Next(members.Count);
+                            members[index].Cancel();
+                            members.RemoveAt(index);
+                            break;
+                        case ConsoleKey.N:
+                            members.Add(StartMember(nextPort, joinPort: seedNodes[nextPort % seedNodes.Length]));
+                            nextPort++;
+                            break;
+                        case ConsoleKey.I: //Info
 
-                        break;
-                    default: break;
+                            break;
+                        default: break;
+                    }
                 }
             }
             Console.WriteLine();
@@ -69,7 +76,9 @@ namespace Surf.TestConsole
                 ProtocolPeriodDurationInMilliseconds = 150
             };
 
-            var tp = new TimeProvider();
+            // var tp = new TimeProvider();
+            var tp = Surf.Sim.TimeComponent.NewComponent().Result;
+
             var metricComponent = new PrometheusMetricComponent();
             var scC = new ProtocolStateComponent(cfg, metricComponent);
 

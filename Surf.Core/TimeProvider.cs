@@ -25,9 +25,9 @@ namespace Surf.Core
             return sw;
         }
 
-        public DateTime UtcNow()
+        public ValueTask<DateTime> UtcNow()
         {
-            return DateTime.UtcNow;
+            return new ValueTask<DateTime>(DateTime.UtcNow);
         }
 
         public Task TaskDelay(int milliseconds)

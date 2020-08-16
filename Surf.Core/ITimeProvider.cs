@@ -10,7 +10,7 @@ namespace Surf.Core
     /// /// </summary>
     public interface ITimeProvider
     {
-        DateTime UtcNow();
+        ValueTask<DateTime> UtcNow();
 
         object NowForDiff();
 

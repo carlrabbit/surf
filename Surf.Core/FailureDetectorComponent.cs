@@ -62,82 +62,107 @@ namespace Surf.Core
             // TODO: Start before or after? 
             _currentSW = _tp.NowForDiff();
 
-            await Task.WhenAll(
-                SendPingAsync(m),
-                _tp.ExecuteAfter(await _state.GetCurrentPingTimeoutAsync(), default,
-                    (_) => SuspectMemberToBeDead(m)),
-                _tp.ExecuteAfter(await _state.GetProtocolPeriodNumberAsync(), default,
-                    (_) => EndProtocolPeriodAsync(m))
-            );
+            var e = new AsyncCountdownEvent(3);
 
+            await SendPingAsync(m, e);
+
+            await _tp.ExecuteAfter(await _state.GetCurrentPingTimeoutAsync(), default,
+                                (_) => SuspectMemberToBeDead(m, e));
+
+            await _tp.ExecuteAfter(await _state.GetProtocolPeriodNumberAsync(), default,
+                 (_) => EndProtocolPeriodAsync(m, e));
+
+
+            await e.WaitAsync();
         }
 
-        private async Task SuspectMemberToBeDead(Member m)//, CancellationToken ct)
+        private async Task SuspectMemberToBeDead(Member m, AsyncCountdownEvent s)//, CancellationToken ct)
         {
-            if (_currentMemberAlive == 1)
+            try
             {
-                return;
-            }
-
-            Interlocked.Exchange(ref _currentPingTimedOut, 1);
-
-            //send ping request to k members
-            //TODO: don't send more than one ping req to an individual member (and add a random pick without side effects)
-            var randomMembersToPingReq = new List<Member>(4/*k*/);
-
-            for (var i = 0; i < 4/*k*/; i++)
-            {
-                var randomMember = await _members.PickRandomMemberPingReqAsync();
-                if (randomMember == null) return;
-
-                randomMembersToPingReq.Append(randomMember);
-
-                await _transport.SendMessageAsync(new Proto.MessageEnvelope()
+                if (_currentMemberAlive == 1)
                 {
-                    PingReq = new Proto.PingReq()
+                    return;
+                }
+
+                Interlocked.Exchange(ref _currentPingTimedOut, 1);
+
+                //send ping request to k members
+                //TODO: don't send more than one ping req to an individual member (and add a random pick without side effects)
+                var randomMembersToPingReq = new List<Member>(4/*k*/);
+
+                for (var i = 0; i < 4/*k*/; i++)
+                {
+                    var randomMember = await _members.PickRandomMemberPingReqAsync();
+                    if (randomMember == null) return;
+
+                    randomMembersToPingReq.Append(randomMember);
+
+                    await _transport.SendMessageAsync(new Proto.MessageEnvelope()
                     {
-                        FromMember = Member.ToProto(_state.GetSelf()),
-                        ToMember = Member.ToProto(m),
+                        PingReq = new Proto.PingReq()
+                        {
+                            FromMember = Member.ToProto(_state.GetSelf()),
+                            ToMember = Member.ToProto(m),
+                            LocalTime = _currentProtocolPeriod
+                        }
+                    }, randomMember);
+                }
+            }
+            finally
+            {
+                s.Signal();
+            }
+        }
+
+        private async Task EndProtocolPeriodAsync(Member m, AsyncCountdownEvent s)
+        {
+            try
+            {
+                if (_currentMemberAlive == 0)
+                {
+                    var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
+
+                    if (memberRemoved)
+                    {
+                        await _gossip.AddAsync(new Proto.GossipEnvelope()
+                        {
+                            MemberFailed = new Proto.MemberFailedForMe()
+                            {
+                                Member = Member.ToProto(m)
+                            }
+                        }).ConfigureAwait(false);
+                    }
+                }
+            }
+            finally
+            {
+                s.Signal();
+            }
+        }
+
+        private async Task SendPingAsync(Member m, AsyncCountdownEvent s)
+        {
+            try
+            {
+                // send a ping 
+                var pingMsg = new Proto.MessageEnvelope()
+                {
+                    Ping = new Proto.Ping()
+                    {
                         LocalTime = _currentProtocolPeriod
                     }
-                }, randomMember);
+                };
+
+                pingMsg.Ping.Gossip.AddRange(await _gossip.FetchNextAsync(6).ConfigureAwait(false));
+
+                // send ping
+                await _transport.SendMessageAsync(pingMsg, m);
             }
-        }
-
-        private async Task EndProtocolPeriodAsync(Member m)
-        {
-            if (_currentMemberAlive == 0)
+            finally
             {
-                var memberRemoved = await _members.RemoveMemberAsync(m).ConfigureAwait(false);
-
-                if (memberRemoved)
-                {
-                    await _gossip.AddAsync(new Proto.GossipEnvelope()
-                    {
-                        MemberFailed = new Proto.MemberFailedForMe()
-                        {
-                            Member = Member.ToProto(m)
-                        }
-                    }).ConfigureAwait(false);
-                }
+                s.Signal();
             }
-        }
-
-        private async Task SendPingAsync(Member m)
-        {
-            // send a ping 
-            var pingMsg = new Proto.MessageEnvelope()
-            {
-                Ping = new Proto.Ping()
-                {
-                    LocalTime = _currentProtocolPeriod
-                }
-            };
-
-            pingMsg.Ping.Gossip.AddRange(await _gossip.FetchNextAsync(6).ConfigureAwait(false));
-
-            // send ping
-            await _transport.SendMessageAsync(pingMsg, m);
         }
 
         public async Task HandleMessage(Proto.MessageEnvelope message, Member fromMember)
