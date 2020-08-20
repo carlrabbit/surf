@@ -104,7 +104,7 @@ namespace Surf.Core
                         {
                             FromMember = Member.ToProto(_state.GetSelf()),
                             ToMember = Member.ToProto(m),
-                            LocalTime = _currentProtocolPeriod
+                            OriginalProtocolPeriod = _currentProtocolPeriod
                         }
                     }, randomMember);
                 }
@@ -150,7 +150,7 @@ namespace Surf.Core
                 {
                     Ping = new Proto.Ping()
                     {
-                        LocalTime = _currentProtocolPeriod
+                        OriginalProtocolPeriod = _currentProtocolPeriod
                     }
                 };
 
@@ -179,7 +179,7 @@ namespace Surf.Core
                     await OnPingReq(message.PingReq, fromMember);
                     break;
                 case Proto.MessageEnvelope.TypeOneofCase.AckReq:
-                    await OnAckReq(message.AckReq, fromMember);
+                    await HandleAckReq(message.AckReq, fromMember);
                     break;
                 default:
                     break;
@@ -189,7 +189,7 @@ namespace Surf.Core
         private async Task OnAck(Proto.Ack ack, Member _)
         {
             // check if ack is actually from the current protocol period
-            if (ack.LocalTime != _currentProtocolPeriod)
+            if (ack.OriginalProtocolPeriod != _currentProtocolPeriod)
             {
                 return;
             }
@@ -212,13 +212,13 @@ namespace Surf.Core
             await _state.UpdateAverageRoundTripTimeAsync(elapsed);
         }
 
-        private async Task OnAckReq(Proto.AckReq ackReq, Member _)
+        private async Task HandleAckReq(Proto.AckReq ackReq, Member _)
         {
             //if ping request is addressed to the current member node, mark _current ping target as alive
             if (ackReq.ToMember.Port == (_state.GetSelf()).Port)
             {
                 //if local time matches
-                if (ackReq.LocalTime != _currentProtocolPeriod)
+                if (ackReq.OriginalProtocolPeriod != _currentProtocolPeriod)
                 {
                     return;
                 }
@@ -245,7 +245,7 @@ namespace Surf.Core
                     {
                         FromMember = Member.ToProto(_state.GetSelf()),
                         ToMember = pr.FromMember,
-                        LocalTime = pr.LocalTime
+                        OriginalProtocolPeriod = pr.OriginalProtocolPeriod
                     }
                 }, fromMember);
             }
@@ -266,7 +266,7 @@ namespace Surf.Core
             {
                 Ack = new Proto.Ack()
                 {
-                    LocalTime = ping.LocalTime
+                    OriginalProtocolPeriod = ping.OriginalProtocolPeriod
                 }
             };
 

@@ -19,16 +19,16 @@ namespace Surf.Core
         private readonly IProtocolStateComponent _state;
         private readonly AsyncReaderWriterLock _rwLock = new AsyncReaderWriterLock();
 
-        private List<GossipWrapper> _basicMemberGossip = new List<GossipWrapper>();
+        private List<GossipWithAge> _basicMemberGossip = new List<GossipWithAge>();
         private HashSet<int> _knownGossip = new HashSet<int>();
         public DisseminationComponent(IProtocolStateComponent state)
         {
             _state = state;
         }
 
-        private class GossipWrapper
+        private class GossipWithAge
         {
-            public GossipWrapper(Proto.GossipEnvelope msg)
+            public GossipWithAge(Proto.GossipEnvelope msg)
             {
                 Msg = msg;
             }
@@ -56,7 +56,7 @@ namespace Surf.Core
             }
             using (await _rwLock.WriterLockAsync())
             {
-                _basicMemberGossip.Insert(0, new GossipWrapper(msg));
+                _basicMemberGossip.Insert(0, new GossipWithAge(msg));
             }
         }
 

@@ -45,6 +45,7 @@ namespace Surf.TestConsole
                             stop = true;
                             break;
                         case ConsoleKey.F:
+                            if (members.Count == 0) continue;
                             var index = rng.Next(members.Count);
                             members[index].Cancel();
                             members.RemoveAt(index);

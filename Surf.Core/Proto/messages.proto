@@ -18,21 +18,21 @@ message MessageEnvelope {
 
 message Ping {
    repeated GossipEnvelope gossip = 1;
-   sfixed32 localTime = 2;
+   sfixed32 originalProtocolPeriod = 2;
 }
 
 message PingReq {
     MemberAddress fromMember = 1;
     MemberAddress toMember = 2;
-    sfixed32 localTime = 3;
+    sfixed32 originalProtocolPeriod = 3;
 }
 
 message Ack {
-    sfixed32 localTime = 1;
+    sfixed32 originalProtocolPeriod = 1;
 }
 
 message AckReq {
     MemberAddress fromMember = 1;
     MemberAddress toMember = 2;
-    sfixed32 localTime = 3;
+    sfixed32 originalProtocolPeriod = 3;
 }
